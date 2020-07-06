@@ -9,8 +9,12 @@ __LXML_VERSION = None
 def version():
     global __LXML_VERSION
     if __LXML_VERSION is None:
-        with open(os.path.join(get_base_dir(), 'src', 'lxml', '__init__.py')) as f:
-            __LXML_VERSION = re.search(r'__version__\s*=\s*"([^"]+)"', f.read(250)).group(1)
+        with open(
+            os.path.join(get_base_dir(), "src", "lxml", "__init__.py")
+        ) as f:
+            __LXML_VERSION = re.search(
+                r'__version__\s*=\s*"([^"]+)"', f.read(250)
+            ).group(1)
             assert __LXML_VERSION
     return __LXML_VERSION
 
@@ -26,29 +30,31 @@ def is_pre_release():
 
 def dev_status():
     _version = version()
-    if 'a' in _version:
-        return 'Development Status :: 3 - Alpha'
-    elif 'b' in _version or 'c' in _version:
-        return 'Development Status :: 4 - Beta'
+    if "a" in _version:
+        return "Development Status :: 3 - Alpha"
+    elif "b" in _version or "c" in _version:
+        return "Development Status :: 4 - Beta"
     else:
-        return 'Development Status :: 5 - Production/Stable'
+        return "Development Status :: 5 - Production/Stable"
 
 
 def changes():
     """Extract part of changelog pertaining to version.
     """
     _version = version()
-    with io.open(os.path.join(get_base_dir(), "CHANGES.txt"), 'r', encoding='utf8') as f:
+    with io.open(
+        os.path.join(get_base_dir(), "CHANGES.txt"), "r", encoding="utf8"
+    ) as f:
         lines = []
         for line in f:
-            if line.startswith('====='):
+            if line.startswith("====="):
                 if len(lines) > 1:
                     break
             if lines:
                 lines.append(line)
             elif line.startswith(_version):
                 lines.append(line)
-    return ''.join(lines[:-1])
+    return "".join(lines[:-1])
 
 
 def create_version_h():
@@ -56,25 +62,30 @@ def create_version_h():
     """
     lxml_version = version()
     # make sure we have a triple part version number
-    parts = lxml_version.split('-')
-    while parts[0].count('.') < 2:
-        parts[0] += '.0'
-    lxml_version = '-'.join(parts).replace('a', '.alpha').replace('b', '.beta')
+    parts = lxml_version.split("-")
+    while parts[0].count(".") < 2:
+        parts[0] += ".0"
+    lxml_version = "-".join(parts).replace("a", ".alpha").replace("b", ".beta")
 
-    file_path = os.path.join(get_base_dir(), 'src', 'lxml', 'includes', 'lxml-version.h')
+    file_path = os.path.join(
+        get_base_dir(), "src", "lxml", "includes", "lxml-version.h"
+    )
 
     # Avoid changing file timestamp if content didn't change.
     if os.path.isfile(file_path):
-        with open(file_path, 'r') as version_h:
+        with open(file_path, "r") as version_h:
             if ('"%s"' % lxml_version) in version_h.read(100):
                 return
 
-    with open(file_path, 'w') as version_h:
-        version_h.write('''\
+    with open(file_path, "w") as version_h:
+        version_h.write(
+            """\
 #ifndef LXML_VERSION_STRING
 #define LXML_VERSION_STRING "%s"
 #endif
-''' % lxml_version)
+"""
+            % lxml_version
+        )
 
 
 def get_base_dir():

@@ -17,7 +17,7 @@ except ImportError:
     from distutils.core import setup
 
 # make sure Cython finds include files in the project directory and not outside
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 import versioninfo
 import setupinfo
@@ -35,7 +35,7 @@ versioninfo.create_version_h()
 lxml_version = versioninfo.version()
 print("Building lxml version %s." % lxml_version)
 
-OPTION_RUN_TESTS = setupinfo.has_option('run-tests')
+OPTION_RUN_TESTS = setupinfo.has_option("run-tests")
 
 branch_link = """
 After an official release of a new stable series, bug fixes may become
@@ -54,11 +54,12 @@ if versioninfo.is_pre_release():
 
 
 extra_options = {}
-if 'setuptools' in sys.modules:
-    extra_options['zip_safe'] = False
-    extra_options['python_requires'] = (
+if "setuptools" in sys.modules:
+    extra_options["zip_safe"] = False
+    extra_options["python_requires"] = (
         # NOTE: keep in sync with Trove classifier list below.
-        '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, != 3.4.*')
+        ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, != 3.4.*"
+    )
 
     try:
         import pkg_resources
@@ -70,54 +71,51 @@ if 'setuptools' in sys.modules:
             deps = [str(req) for req in pkg_resources.parse_requirements(f)]
         finally:
             f.close()
-        extra_options['extras_require'] = {
-            'source': deps,
-            'cssselect': 'cssselect>=0.7',
-            'html5': 'html5lib',
-            'htmlsoup': 'BeautifulSoup4',
+        extra_options["extras_require"] = {
+            "source": deps,
+            "cssselect": "cssselect>=0.7",
+            "html5": "html5lib",
+            "htmlsoup": "BeautifulSoup4",
         }
 
 extra_options.update(setupinfo.extra_setup_args())
 
-extra_options['package_data'] = {
-    'lxml': [
-        'etree.h',
-        'etree_api.h',
-        'lxml.etree.h',
-        'lxml.etree_api.h',
+extra_options["package_data"] = {
+    "lxml": ["etree.h", "etree_api.h", "lxml.etree.h", "lxml.etree_api.h",],
+    "lxml.includes": ["*.pxd", "*.h"],
+    "lxml.isoschematron": [
+        "resources/rng/iso-schematron.rng",
+        "resources/xsl/*.xsl",
+        "resources/xsl/iso-schematron-xslt1/*.xsl",
+        "resources/xsl/iso-schematron-xslt1/readme.txt",
     ],
-    'lxml.includes': [
-        '*.pxd', '*.h'
-        ],
-    'lxml.isoschematron':  [
-        'resources/rng/iso-schematron.rng',
-        'resources/xsl/*.xsl',
-        'resources/xsl/iso-schematron-xslt1/*.xsl',
-        'resources/xsl/iso-schematron-xslt1/readme.txt'
-        ],
-    }
+}
 
-extra_options['package_dir'] = {
-        '': 'src'
-    }
+extra_options["package_dir"] = {"": "src"}
 
-extra_options['packages'] = [
-        'lxml', 'lxml.includes', 'lxml.html', 'lxml.isoschematron'
-    ]
+extra_options["packages"] = [
+    "lxml",
+    "lxml.includes",
+    "lxml.html",
+    "lxml.isoschematron",
+]
 
 
 def setup_extra_options():
-    is_interesting_package = re.compile('^(libxml|libxslt|libexslt)$').match
-    def extract_files(directories, pattern='*'):
+    is_interesting_package = re.compile("^(libxml|libxslt|libexslt)$").match
+
+    def extract_files(directories, pattern="*"):
         def get_files(root, dir_path, files):
-            return [ (root, dir_path, filename)
-                     for filename in fnmatch.filter(files, pattern) ]
+            return [
+                (root, dir_path, filename)
+                for filename in fnmatch.filter(files, pattern)
+            ]
 
         file_list = []
         for dir_path in directories:
             dir_path = os.path.realpath(dir_path)
             for root, dirs, files in os.walk(dir_path):
-                rel_dir = root[len(dir_path)+1:]
+                rel_dir = root[len(dir_path) + 1 :]
                 if is_interesting_package(rel_dir):
                     file_list.extend(get_files(root, rel_dir, files))
         return file_list
@@ -130,12 +128,14 @@ def setup_extra_options():
                 # libxml2/libxslt header filenames are unique
                 continue
             seen.add(filename)
-            package_path = '.'.join(rel_path.split(os.sep))
+            package_path = ".".join(rel_path.split(os.sep))
             if package_path in packages:
                 root, package_files = packages[package_path]
                 if root != root_path:
-                    print("conflicting directories found for include package '%s': %s and %s"
-                          % (package_path, root_path, root))
+                    print(
+                        "conflicting directories found for include package '%s': %s and %s"
+                        % (package_path, root_path, root)
+                    )
                     continue
             else:
                 package_files = []
@@ -149,19 +149,22 @@ def setup_extra_options():
 
     # Build ext modules
     ext_modules = setupinfo.ext_modules(
-                    STATIC_INCLUDE_DIRS, STATIC_LIBRARY_DIRS,
-                    STATIC_CFLAGS, STATIC_BINARIES)
-    extra_opts['ext_modules'] = ext_modules
+        STATIC_INCLUDE_DIRS,
+        STATIC_LIBRARY_DIRS,
+        STATIC_CFLAGS,
+        STATIC_BINARIES,
+    )
+    extra_opts["ext_modules"] = ext_modules
 
-    packages = extra_opts.get('packages', list())
-    package_dir = extra_opts.get('package_dir', dict())
-    package_data = extra_opts.get('package_data', dict())
+    packages = extra_opts.get("packages", list())
+    package_dir = extra_opts.get("package_dir", dict())
+    package_data = extra_opts.get("package_data", dict())
 
     # Add lxml.include with (lxml, libxslt headers...)
     #   python setup.py build --static --static-deps install
     #   python setup.py bdist_wininst --static
     if setupinfo.OPTION_STATIC:
-        include_dirs = [] # keep them in order
+        include_dirs = []  # keep them in order
         for extension in ext_modules:
             for inc_dir in extension.include_dirs:
                 if inc_dir not in include_dirs:
@@ -171,18 +174,19 @@ def setup_extra_options():
 
         for package_path, (root_path, filenames) in header_packages.items():
             if package_path:
-                package = 'lxml.includes.' + package_path
+                package = "lxml.includes." + package_path
                 packages.append(package)
             else:
-                package = 'lxml.includes'
+                package = "lxml.includes"
             package_data[package] = filenames
             package_dir[package] = root_path
 
     return extra_opts
 
+
 setup(
-    name = "lxml",
-    version = lxml_version,
+    name="lxml",
+    version=lxml_version,
     author="lxml dev team",
     author_email="lxml-dev@lxml.de",
     maintainer="lxml dev team",
@@ -193,12 +197,14 @@ setup(
     # `Unknown distribution option: 'bugtrack_url'`
     # which distract folks from real causes of problems when troubleshooting
     # bugtrack_url="https://bugs.launchpad.net/lxml",
-
     description=(
         "Powerful and Pythonic XML processing library"
         " combining libxml2/libxslt with the ElementTree API."
     ),
-    long_description=((("""\
+    long_description=(
+        (
+            (
+                """\
 lxml is a Pythonic, mature binding for the libxml2 and libxslt libraries.  It
 provides safe and convenient access to these libraries using the ElementTree
 API.
@@ -219,33 +225,38 @@ install lxml from
 https://github.com/lxml/lxml/tarball/master#egg=lxml-dev if you have
 an appropriate version of Cython installed.
 
-""" + branch_link) % {"branch_version": versioninfo.branch_version()}) +
-                      versioninfo.changes()),
+"""
+                + branch_link
+            )
+            % {"branch_version": versioninfo.branch_version()}
+        )
+        + versioninfo.changes()
+    ),
     classifiers=[
         versioninfo.dev_status(),
-        'Intended Audience :: Developers',
-        'Intended Audience :: Information Technology',
-        'License :: OSI Approved :: BSD License',
-        'Programming Language :: Cython',
+        "Intended Audience :: Developers",
+        "Intended Audience :: Information Technology",
+        "License :: OSI Approved :: BSD License",
+        "Programming Language :: Cython",
         # NOTE: keep in sync with 'python_requires' list above.
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: C',
-        'Operating System :: OS Independent',
-        'Topic :: Text Processing :: Markup :: HTML',
-        'Topic :: Text Processing :: Markup :: XML',
-        'Topic :: Software Development :: Libraries :: Python Modules'
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: C",
+        "Operating System :: OS Independent",
+        "Topic :: Text Processing :: Markup :: HTML",
+        "Topic :: Text Processing :: Markup :: XML",
+        "Topic :: Software Development :: Libraries :: Python Modules",
     ],
-
     **setup_extra_options()
 )
 
 if OPTION_RUN_TESTS:
     print("Running tests.")
     import test
-    sys.exit( test.main(sys.argv[:1]) )
+
+    sys.exit(test.main(sys.argv[:1]))

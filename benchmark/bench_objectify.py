@@ -1,19 +1,21 @@
 from itertools import *
 
 import benchbase
-from benchbase import (with_text, children, nochange)
+from benchbase import with_text, children, nochange
 
 ############################################################
 # Benchmarks
 ############################################################
 
+
 class BenchMark(benchbase.TreeBenchMark):
-    repeat100  = range(100)
+    repeat100 = range(100)
     repeat1000 = range(1000)
     repeat3000 = range(3000)
 
     def __init__(self, lib):
         from lxml import etree, objectify
+
         self.objectify = objectify
         parser = etree.XMLParser(remove_blank_text=True)
         lookup = objectify.ObjectifyElementClassLookup()
@@ -47,15 +49,15 @@ class BenchMark(benchbase.TreeBenchMark):
     def bench_attributes_deep(self, root):
         "1 2 4"
         for i in self.repeat3000:
-            root.zzzzz['{cdefg}a00001']
+            root.zzzzz["{cdefg}a00001"]
 
     @nochange
     def bench_attributes_deep_cached(self, root):
         "1 2 4"
         cache1 = root.zzzzz
-        cache2 = cache1['{cdefg}a00001']
+        cache2 = cache1["{cdefg}a00001"]
         for i in self.repeat3000:
-            root.zzzzz['{cdefg}a00001']
+            root.zzzzz["{cdefg}a00001"]
 
     @nochange
     def bench_objectpath(self, root):
@@ -75,7 +77,7 @@ class BenchMark(benchbase.TreeBenchMark):
     def bench_objectpath_deep_cached(self, root):
         "1 2 4"
         cache1 = root.zzzzz
-        cache2 = cache1['{cdefg}a00001']
+        cache2 = cache1["{cdefg}a00001"]
         path = self.objectify.ObjectPath(".zzzzz.{cdefg}a00001")
         for i in self.repeat3000:
             path(root)
@@ -110,13 +112,8 @@ class BenchMark(benchbase.TreeBenchMark):
     def bench_elementmaker(self, children):
         E = self.objectify.E
         for child in children:
-            root = E.this(
-                "test",
-                E.will(
-                    E.do("nothing"),
-                    E.special,
-                    )
-                )
+            root = E.this("test", E.will(E.do("nothing"), E.special,))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     benchbase.main(BenchMark)

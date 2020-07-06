@@ -11,15 +11,19 @@
 
 import re, sys
 
+
 def stdout():
     if sys.version_info[0] < 3:
         return sys.stdout
+
     class bytes_stdout(object):
         def write(self, data):
             if isinstance(data, bytes):
-                data = data.decode('ISO8859-1')
+                data = data.decode("ISO8859-1")
             sys.stdout.write(data)
+
     return bytes_stdout()
+
 
 try:
     from StringIO import StringIO as BytesIO
@@ -29,20 +33,25 @@ except ImportError:
 from lxml import etree as ElementTree
 from lxml import _elementpath as ElementPath
 from lxml import ElementInclude
+
 ET = ElementTree
 
-#from elementtree import ElementTree
-#from elementtree import ElementPath
-#from elementtree import ElementInclude
-#from elementtree import HTMLTreeBuilder
-#from elementtree import SimpleXMLWriter
+# from elementtree import ElementTree
+# from elementtree import ElementPath
+# from elementtree import ElementInclude
+# from elementtree import HTMLTreeBuilder
+# from elementtree import SimpleXMLWriter
+
 
 def fix_compatibility(xml_data):
-    xml_data = re.sub(r'\s*xmlns:[a-z0-9]+="http://www.w3.org/2001/XInclude"', '', xml_data)
-    xml_data = xml_data.replace(' />', '/>')
-    if xml_data[-1:] == '\n':
+    xml_data = re.sub(
+        r'\s*xmlns:[a-z0-9]+="http://www.w3.org/2001/XInclude"', "", xml_data
+    )
+    xml_data = xml_data.replace(" />", "/>")
+    if xml_data[-1:] == "\n":
         xml_data = xml_data[:-1]
     return xml_data
+
 
 def serialize(elem, **options):
     file = BytesIO()
@@ -54,24 +63,31 @@ def serialize(elem, **options):
         except KeyError:
             encoding = "utf-8"
     else:
-        encoding = 'ISO8859-1'
+        encoding = "ISO8859-1"
     result = fix_compatibility(file.getvalue().decode(encoding))
     if sys.version_info[0] < 3:
         result = result.encode(encoding)
     return result
 
+
 def summarize(elem):
     return elem.tag
+
 
 def summarize_list(seq):
     return list(map(summarize, seq))
 
+
 def normalize_crlf(tree):
     for elem in tree.getiterator():
-        if elem.text: elem.text = elem.text.replace("\r\n", "\n")
-        if elem.tail: elem.tail = elem.tail.replace("\r\n", "\n")
+        if elem.text:
+            elem.text = elem.text.replace("\r\n", "\n")
+        if elem.tail:
+            elem.tail = elem.tail.replace("\r\n", "\n")
 
-SAMPLE_XML = ElementTree.XML("""
+
+SAMPLE_XML = ElementTree.XML(
+    """
 <body>
   <tag class='a'>text</tag>
   <tag class='b' />
@@ -79,10 +95,12 @@ SAMPLE_XML = ElementTree.XML("""
     <tag class='b' id='inner'>subtext</tag>
    </section>
 </body>
-""")
+"""
+)
 
 #
 # interface tests
+
 
 def check_string(string):
     len(string)
@@ -93,10 +111,12 @@ def check_string(string):
     new_string = string + " "
     string[:0]
 
+
 def check_string_or_none(value):
     if value is None:
         return
     return check_string(value)
+
 
 def check_mapping(mapping):
     len(mapping)
@@ -107,6 +127,7 @@ def check_mapping(mapping):
     mapping["key"] = "value"
     if mapping["key"] != "value":
         print("expected value string, got %r" % mapping["key"])
+
 
 def check_element(element):
     if not hasattr(element, "tag"):
@@ -124,11 +145,14 @@ def check_element(element):
     for elem in element:
         check_element(elem)
 
+
 def check_element_tree(tree):
     check_element(tree.getroot())
 
+
 # --------------------------------------------------------------------
 # element tree tests
+
 
 def sanity():
     """
@@ -140,8 +164,10 @@ def sanity():
     >>> from elementtree.TidyTools import *
     """
 
+
 # doesn't work with lxml.etree
 del sanity
+
 
 def version():
     """
@@ -149,8 +175,10 @@ def version():
     '1.3a2'
     """
 
+
 # doesn't work with lxml.etree
 del version
+
 
 def interface():
     """
@@ -161,6 +189,7 @@ def interface():
     >>> tree = ElementTree.ElementTree(element)
     >>> check_element_tree(tree)
     """
+
 
 def simpleops():
     """
@@ -183,6 +212,7 @@ def simpleops():
     '<body><tag/><tag2/></body>'
     >>> elem.remove(e)
     """
+
 
 def simplefind():
     """
@@ -217,8 +247,10 @@ def simplefind():
     >>> ElementTree.ElementPath = CurrentElementPath
     """
 
+
 # doesn't work with lxml.etree
 del simplefind
+
 
 def find():
     """
@@ -300,6 +332,7 @@ def find():
     ['tag', 'tag']
     """
 
+
 def bad_find():
     """
     Check bad or unsupported path expressions.
@@ -314,6 +347,7 @@ def bad_find():
     #Traceback (most recent call last):
     #SyntaxError: invalid path
     """
+
 
 def parsefile():
     """
@@ -343,6 +377,7 @@ def parsefile():
 ##     </ns0:root>
     """
 
+
 def parsehtml():
     """
     Test HTML parsing.
@@ -354,8 +389,10 @@ def parsehtml():
     '<p>spam<b>egg</b></p>'
     """
 
+
 # doesn't work with lxml.etree
 del parsehtml
+
 
 def parseliteral():
     r"""
@@ -389,6 +426,7 @@ def parseliteral():
     'body'
     """
 
+
 def simpleparsefile():
     """
     Test the xmllib-based parser.
@@ -405,8 +443,10 @@ def simpleparsefile():
     </root>
     """
 
+
 # doesn't work with lxml.etree
 del simpleparsefile
+
 
 def iterparse():
     """
@@ -475,6 +515,7 @@ def iterparse():
 
     """
 
+
 def fancyparsefile():
     """
     Test the "fancy" parser.
@@ -509,8 +550,10 @@ def fancyparsefile():
     END root
     """
 
+
 # doesn't work with lxml.etree
 del fancyparsefile
+
 
 def writefile():
     """
@@ -528,6 +571,7 @@ def writefile():
 ##     'text<subtag>subtext</subtag>'
     """
 
+
 def writestring():
     """
     >>> elem = ElementTree.XML("<html><body>text</body></html>")
@@ -537,6 +581,7 @@ def writestring():
     >>> print(repr(ElementTree.tostring(elem)).lstrip('b'))
     '<html><body>text</body></html>'
     """
+
 
 def encoding():
     r"""
@@ -597,8 +642,10 @@ def encoding():
     '<?xml version=\'1.0\' encoding=\'iso-8859-1\'?>\n<tag key="\xe5\xf6\xf6&lt;&gt;"/>'
     """
 
+
 if sys.version_info[0] >= 3:
     encoding.__doc__ = encoding.__doc__.replace("u'", "'")
+
 
 def methods():
     r"""
@@ -619,8 +666,10 @@ def methods():
 
     """
 
+
 # doesn't work with lxml.etree
 del methods
+
 
 def iterators():
     """
@@ -637,6 +686,7 @@ def iterators():
     'this is a paragraph.'
     """
 
+
 ENTITY_XML = """\
 <!DOCTYPE points [
 <!ENTITY % user-entities SYSTEM 'user-entities.xml'>
@@ -644,6 +694,7 @@ ENTITY_XML = """\
 ]>
 <document>&entity;</document>
 """
+
 
 def entity():
     """
@@ -663,8 +714,10 @@ def entity():
 
     """
 
+
 # doesn't work with lxml.etree
 del entity
+
 
 def error(xml):
     """
@@ -683,8 +736,10 @@ def error(xml):
     except ET.ParseError:
         return sys.exc_value
 
+
 # doesn't work with lxml.etree -> different positions
 del error
+
 
 def namespace():
     """
@@ -713,6 +768,7 @@ def namespace():
     3) unknown namespaces
 
     """
+
 
 def qname():
     """
@@ -767,6 +823,7 @@ def qname():
 
     """
 
+
 def xpath_tokenizer(p):
     """
     Test the XPath tokenizer.
@@ -820,6 +877,7 @@ def xpath_tokenizer(p):
         out.append(op or tag)
     return out
 
+
 #
 # xinclude tests (samples from appendix C of the xinclude specification)
 
@@ -830,7 +888,8 @@ XINCLUDE = {
   <p>120 Mz is adequate for an average home user.</p>
   <xi:include href="disclaimer.xml"/>
 </document>
-""", "disclaimer.xml": """\
+""",
+    "disclaimer.xml": """\
 <?xml version='1.0'?>
 <disclaimer>
   <p>The opinions represented herein represent those of the individual
@@ -844,13 +903,16 @@ XINCLUDE = {
   <p>This document has been accessed
   <xi:include href="count.txt" parse="text"/> times.</p>
 </document>
-""", "count.txt": "324387", "C3.xml": """\
+""",
+    "count.txt": "324387",
+    "C3.xml": """\
 <?xml version='1.0'?>
 <document xmlns:xi="http://www.w3.org/2001/XInclude">
   <p>The following is the source of the "data.xml" resource:</p>
   <example><xi:include href="data.xml" parse="text"/></example>
 </document>
-""", "data.xml": """\
+""",
+    "data.xml": """\
 <?xml version='1.0'?>
 <data>
   <item><![CDATA[Brooks & Shields]]></item>
@@ -874,7 +936,8 @@ XINCLUDE = {
   <p>Example.</p>
   <xi:include href="samples/simple.xml"/>
 </document>
-"""}
+""",
+}
 
 
 def xinclude_loader(href, parse="xml", encoding=None):
@@ -885,6 +948,7 @@ def xinclude_loader(href, parse="xml", encoding=None):
     if parse == "xml":
         return ElementTree.XML(data)
     return data
+
 
 def xinclude():
     r"""
@@ -937,6 +1001,7 @@ def xinclude():
 
     """
 
+
 def xinclude_default():
     """
     >>> document = xinclude_loader("default.xml")
@@ -952,8 +1017,10 @@ def xinclude_default():
     </document>
     """
 
+
 #
 # xmlwriter
+
 
 def xmlwriter():
     r"""
@@ -986,11 +1053,13 @@ def xmlwriter():
     </body></html>
     """
 
+
 # doesn't work with lxml.etree
 del xmlwriter
 
 # --------------------------------------------------------------------
 # reported bugs
+
 
 def bug_xmltoolkit21():
     """
@@ -1023,8 +1092,10 @@ def bug_xmltoolkit21():
 
     """
 
+
 # doesn't work with lxml.etree
 del bug_xmltoolkit21
+
 
 def bug_xmltoolkit25():
     """
@@ -1037,6 +1108,7 @@ def bug_xmltoolkit25():
     'subtext'
     """
 
+
 def bug_xmltoolkit28():
     """
     .//tag causes exceptions
@@ -1048,6 +1120,7 @@ def bug_xmltoolkit28():
     ['tbody']
     """
 
+
 def bug_xmltoolkitX1():
     """
     dump() doesn't flush the output buffer
@@ -1058,8 +1131,10 @@ def bug_xmltoolkitX1():
     tail
     """
 
+
 # doesn't work with lxml.etree
 del bug_xmltoolkitX1
+
 
 def bug_xmltoolkit39():
     """
@@ -1090,8 +1165,10 @@ def bug_xmltoolkit39():
 
     """
 
+
 # doesn't work with lxml.etree
 del bug_xmltoolkit39
+
 
 def bug_xmltoolkit45():
     """
@@ -1141,8 +1218,10 @@ def bug_xmltoolkit45():
 
     """
 
+
 # doesn't work with lxml.etree
 del bug_xmltoolkit45
+
 
 def bug_xmltoolkit46():
     """
@@ -1155,8 +1234,10 @@ def bug_xmltoolkit46():
 
     """
 
+
 # doesn't work with lxml.etree
 del bug_xmltoolkit46
+
 
 def bug_xmltoolkit54():
     """
@@ -1167,8 +1248,10 @@ def bug_xmltoolkit54():
     '<doc>&#33328;</doc>'
     """
 
+
 # doesn't work with lxml.etree
 del bug_xmltoolkit54
+
 
 def bug_xmltoolkit55():
     """
@@ -1179,8 +1262,10 @@ def bug_xmltoolkit55():
     ParseError: undefined entity &ldots;: line 1, column 36
     """
 
+
 # doesn't work with lxml.etree
 del bug_xmltoolkit55
+
 
 def bug_200708_version():
     """
@@ -1196,8 +1281,10 @@ def bug_200708_version():
     </root>
     """
 
+
 # doesn't work with lxml.etree
 del bug_200708_version
+
 
 def bug_200708_newline():
     r"""
@@ -1213,8 +1300,10 @@ def bug_200708_newline():
     '<SomeTag text="def _f():&#10;  return 3&#10;" />'
     """
 
+
 # doesn't work with lxml.etree
 del bug_200708_newline
+
 
 def bug_200709_default_namespace():
     """
@@ -1239,6 +1328,7 @@ def bug_200709_default_namespace():
 
     """
 
+
 # doesn't work with lxml.etree
 del bug_200709_default_namespace
 
@@ -1246,6 +1336,7 @@ del bug_200709_default_namespace
 
 if __name__ == "__main__":
     import doctest, selftest
+
     failed, tested = doctest.testmod(selftest)
     print("%d tests ok." % (tested - failed))
     if failed > 0:

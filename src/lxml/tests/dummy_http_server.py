@@ -23,16 +23,18 @@ def webserver(app, port=0, host=None):
     with webserver(wsgi_app_function, 8080) as host_url:
         do_ws_calls(host_url)
     """
-    server = build_web_server(app, port, host or '127.0.0.1')
+    server = build_web_server(app, port, host or "127.0.0.1")
     host, port = server.socket.getsockname()
 
     import threading
-    thread = threading.Thread(target=server.serve_forever,
-                              kwargs={'poll_interval': 0.5})
+
+    thread = threading.Thread(
+        target=server.serve_forever, kwargs={"poll_interval": 0.5}
+    )
     thread.setDaemon(True)
     thread.start()
     try:
-        yield 'http://%s:%s/' % (host, port)  # yield control to 'with' body
+        yield "http://%s:%s/" % (host, port)  # yield control to 'with' body
     finally:
         server.shutdown()
         server.server_close()
@@ -46,6 +48,8 @@ except ImportError:
     from socketserver import ThreadingMixIn
 
 import wsgiref.simple_server as wsgiserver
+
+
 class WebServer(wsgiserver.WSGIServer, ThreadingMixIn):
     """A web server that starts a new thread for each request.
     """
@@ -63,9 +67,12 @@ class _RequestHandler(wsgiserver.WSGIRequestHandler):
 
 def build_web_server(app, port, host=None):
     server = wsgiserver.make_server(
-        host or '', port, app,
+        host or "",
+        port,
+        app,
         server_class=WebServer,
-        handler_class=_RequestHandler)
+        handler_class=_RequestHandler,
+    )
     return server
 
 
@@ -77,8 +84,11 @@ class HTTPRequestCollector(object):
         self.headers = list(headers or ())
 
     def __call__(self, environ, start_response):
-        self.requests.append((
-            environ.get('PATH_INFO'),
-            urlparse.parse_qsl(environ.get('QUERY_STRING'))))
-        start_response('%s OK' % self.response_code, self.headers)
+        self.requests.append(
+            (
+                environ.get("PATH_INFO"),
+                urlparse.parse_qsl(environ.get("QUERY_STRING")),
+            )
+        )
+        start_response("%s OK" % self.response_code, self.headers)
         return [self.response_data]

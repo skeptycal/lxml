@@ -7,9 +7,10 @@ from benchbase import onlylib, children, nochange
 # Benchmarks
 ############################################################
 
+
 class XPathBenchMark(benchbase.TreeBenchMark):
     @nochange
-    @onlylib('lxe')
+    @onlylib("lxe")
     @children
     def bench_xpath_class(self, children):
         xpath = self.etree.XPath("./*[1]")
@@ -17,7 +18,7 @@ class XPathBenchMark(benchbase.TreeBenchMark):
             xpath(child)
 
     @nochange
-    @onlylib('lxe')
+    @onlylib("lxe")
     @children
     def bench_xpath_class_repeat(self, children):
         for child in children:
@@ -25,30 +26,31 @@ class XPathBenchMark(benchbase.TreeBenchMark):
             xpath(child)
 
     @nochange
-    @onlylib('lxe')
+    @onlylib("lxe")
     def bench_xpath_element(self, root):
         xpath = self.etree.XPathElementEvaluator(root)
         for child in root:
             xpath.evaluate("./*[1]")
 
     @nochange
-    @onlylib('lxe')
+    @onlylib("lxe")
     @children
     def bench_xpath_method(self, children):
         for child in children:
             child.xpath("./*[1]")
 
     @nochange
-    @onlylib('lxe')
+    @onlylib("lxe")
     @children
     def bench_multiple_xpath_or(self, children):
-        xpath = self.etree.XPath(".//p:a00001|.//p:b00001|.//p:c00001",
-                                 namespaces={'p':'cdefg'})
+        xpath = self.etree.XPath(
+            ".//p:a00001|.//p:b00001|.//p:c00001", namespaces={"p": "cdefg"}
+        )
         for child in children:
             xpath(child)
 
     @nochange
-    @onlylib('lxe')
+    @onlylib("lxe")
     @children
     def bench_multiple_iter_tag(self, children):
         for child in children:
@@ -57,7 +59,7 @@ class XPathBenchMark(benchbase.TreeBenchMark):
             list(child.iter("{cdefg}c00001"))
 
     @nochange
-    @onlylib('lxe')
+    @onlylib("lxe")
     @children
     def bench_xpath_old_extensions(self, children):
         def return_child(_, elements):
@@ -65,14 +67,16 @@ class XPathBenchMark(benchbase.TreeBenchMark):
                 return elements[0][0]
             else:
                 return ()
-        extensions = {("test", "child") : return_child}
-        xpath = self.etree.XPath("t:child(.)", namespaces={"t":"test"},
-                                 extensions=extensions)
+
+        extensions = {("test", "child"): return_child}
+        xpath = self.etree.XPath(
+            "t:child(.)", namespaces={"t": "test"}, extensions=extensions
+        )
         for child in children:
             xpath(child)
 
     @nochange
-    @onlylib('lxe')
+    @onlylib("lxe")
     @children
     def bench_xpath_extensions(self, children):
         def return_child(_, elements):
@@ -80,14 +84,18 @@ class XPathBenchMark(benchbase.TreeBenchMark):
                 return elements[0][0]
             else:
                 return ()
+
         self.etree.FunctionNamespace("testns")["t"] = return_child
 
         try:
-            xpath = self.etree.XPath("test:t(.)", namespaces={"test":"testns"})
+            xpath = self.etree.XPath(
+                "test:t(.)", namespaces={"test": "testns"}
+            )
             for child in children:
                 xpath(child)
         finally:
             del self.etree.FunctionNamespace("testns")["t"]
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     benchbase.main(XPathBenchMark)

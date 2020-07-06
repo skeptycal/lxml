@@ -7,10 +7,12 @@ from benchbase import onlylib
 # Benchmarks
 ############################################################
 
+
 class XSLTBenchMark(benchbase.TreeBenchMark):
-    @onlylib('lxe')
+    @onlylib("lxe")
     def bench_xslt_extensions_old(self, root):
-        tree = self.etree.XML("""\
+        tree = self.etree.XML(
+            """\
 <xsl:stylesheet version="1.0"
    xmlns:l="test"
    xmlns:testns="testns"
@@ -24,19 +26,23 @@ class XSLTBenchMark(benchbase.TreeBenchMark):
     </l:result>
   </xsl:template>
 </xsl:stylesheet>
-""")
+"""
+        )
+
         def return_child(_, elements):
             return elements[0][0]
 
-        extensions = {('testns', 'child') : return_child}
+        extensions = {("testns", "child"): return_child}
 
         transform = self.etree.XSLT(tree, extensions)
         for i in range(10):
             transform(root)
 
-    @onlylib('lxe')
+    @onlylib("lxe")
     def bench_xslt_document(self, root):
-        transform = self.etree.XSLT(self.etree.XML("""\
+        transform = self.etree.XSLT(
+            self.etree.XML(
+                """\
 <xsl:stylesheet version="1.0"
    xmlns:l="test"
    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -49,8 +55,11 @@ class XSLTBenchMark(benchbase.TreeBenchMark):
     </l:result>
   </xsl:template>
 </xsl:stylesheet>
-"""))
+"""
+            )
+        )
         transform(root)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     benchbase.main(XSLTBenchMark)

@@ -8,26 +8,32 @@ import sys
 
 try:
     from StringIO import StringIO
+
     BytesIO = StringIO
 except ImportError:
     from io import BytesIO, StringIO
 
 from lxml import etree as ElementTree
 
+
 def stdout():
     if sys.version_info[0] < 3:
         return sys.stdout
+
     class bytes_stdout(object):
         def write(self, data):
             if isinstance(data, bytes):
-                data = data.decode('ISO8859-1')
+                data = data.decode("ISO8859-1")
             sys.stdout.write(data)
+
     return bytes_stdout()
+
 
 def unserialize(text):
     file = StringIO(text)
     tree = ElementTree.parse(file)
     return tree.getroot()
+
 
 def serialize(elem, encoding=None):
     file = BytesIO()
@@ -38,19 +44,23 @@ def serialize(elem, encoding=None):
         tree.write(file)
     result = file.getvalue()
     if sys.version_info[0] >= 3:
-        result = result.decode('ISO8859-1')
-    result = result.replace(' />', '/>')
-    if result[-1:] == '\n':
+        result = result.decode("ISO8859-1")
+    result = result.replace(" />", "/>")
+    if result[-1:] == "\n":
         result = result[:-1]
     return result
+
 
 def summarize(elem):
     return elem.tag
 
+
 def summarize_list(seq):
     return list(map(summarize, seq))
 
-SAMPLE_XML = unserialize("""
+
+SAMPLE_XML = unserialize(
+    """
 <body>
   <tag>text</tag>
   <tag />
@@ -58,9 +68,11 @@ SAMPLE_XML = unserialize("""
     <tag>subtext</tag>
   </section>
 </body>
-""")
+"""
+)
 
-SAMPLE_XML_NS = unserialize("""
+SAMPLE_XML_NS = unserialize(
+    """
 <body xmlns="http://effbot.org/ns">
   <tag>text</tag>
   <tag />
@@ -68,9 +80,11 @@ SAMPLE_XML_NS = unserialize("""
     <tag>subtext</tag>
   </section>
 </body>
-""")
+"""
+)
 
 # interface tests
+
 
 def check_string(string):
     len(string)
@@ -81,6 +95,7 @@ def check_string(string):
     new_string = string + " "
     string[:0]
 
+
 def check_mapping(mapping):
     len(mapping)
     keys = mapping.keys()
@@ -90,6 +105,7 @@ def check_mapping(mapping):
     mapping["key"] = "value"
     if mapping["key"] != "value":
         print("expected value string, got %r" % mapping["key"])
+
 
 def check_element(element):
     if not hasattr(element, "tag"):
@@ -107,8 +123,10 @@ def check_element(element):
     if element.tail is not None:
         check_string(element.tail)
 
+
 def check_element_tree(tree):
     check_element(tree.getroot())
+
 
 def element():
     """
@@ -119,6 +137,7 @@ def element():
     >>> tree = ElementTree.ElementTree(element)
     >>> check_element_tree(tree)
     """
+
 
 def parsefile():
     """
@@ -146,6 +165,7 @@ def parsefile():
     </root>
     """
 
+
 def writefile():
     """
     >>> elem = ElementTree.Element("tag")
@@ -156,6 +176,7 @@ def writefile():
     >>> serialize(elem)
     '<tag>text<subtag>subtext</subtag></tag>'
     """
+
 
 def encoding():
     r"""
@@ -217,8 +238,10 @@ def encoding():
 
     """
 
+
 if sys.version_info[0] >= 3:
     encoding.__doc__ = encoding.__doc__.replace("u'", "'")
+
 
 def qname():
     """
@@ -238,6 +261,7 @@ def qname():
 
     """
 
+
 def cdata():
     """
     Test CDATA handling (etc).
@@ -250,6 +274,7 @@ def cdata():
     '<tag>hello</tag>'
 
     """
+
 
 def find():
     """
@@ -317,7 +342,9 @@ def find():
     ['{http://effbot.org/ns}tag', '{http://effbot.org/ns}tag', '{http://effbot.org/ns}tag']
     """
 
+
 # XXX only deep copying is supported
+
 
 def copy():
     """
@@ -339,6 +366,7 @@ def copy():
     '<tag>hello<foo/></tag>'
 
     """
+
 
 def attrib():
     """
@@ -372,6 +400,7 @@ def attrib():
 
     """
 
+
 def makeelement():
     """
     Test makeelement handling.
@@ -390,6 +419,7 @@ def makeelement():
     '<tag><subtag key="value"/></tag>'
 
     """
+
 
 ## def observer():
 ##     """
@@ -445,6 +475,7 @@ ENTITY_XML = """\
 
 if __name__ == "__main__":
     import doctest, selftest2
+
     failed, tested = doctest.testmod(selftest2)
     print("%d tests ok." % (tested - failed))
     if failed > 0:

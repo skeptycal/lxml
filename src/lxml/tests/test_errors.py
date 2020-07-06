@@ -20,10 +20,10 @@ class ErrorTestCase(HelperTestCase):
     def test_bad_element(self):
         # attrib argument of Element() should be a dictionary, so if
         # we pass a string we should get an error.
-        self.assertRaises(TypeError, self.etree.Element, 'a', 'b')
+        self.assertRaises(TypeError, self.etree.Element, "a", "b")
 
     def test_empty_parse(self):
-        self.assertRaises(etree.XMLSyntaxError, etree.fromstring, '')
+        self.assertRaises(etree.XMLSyntaxError, etree.fromstring, "")
 
     def test_element_cyclic_gc_none(self):
         # test if cyclic reference can crash etree
@@ -38,7 +38,7 @@ class ErrorTestCase(HelperTestCase):
 
             count = getrefcount(None)
 
-            l = [Element('name'), Element('name')]
+            l = [Element("name"), Element("name")]
             l.append(l)
 
             del l
@@ -50,22 +50,31 @@ class ErrorTestCase(HelperTestCase):
             sys.settrace(trace_func)
 
     def test_xmlsyntaxerror_has_info(self):
-        broken_xml_name = 'test_broken.xml'
-        broken_xml_path = os.path.join(os.path.dirname(__file__), broken_xml_name)
-        fail_msg = 'test_broken.xml should raise an etree.XMLSyntaxError'
+        broken_xml_name = "test_broken.xml"
+        broken_xml_path = os.path.join(
+            os.path.dirname(__file__), broken_xml_name
+        )
+        fail_msg = "test_broken.xml should raise an etree.XMLSyntaxError"
         try:
             etree.parse(broken_xml_path)
         except etree.XMLSyntaxError as e:
             # invariant
-            self.assertEqual(e.position, (e.lineno, e.offset + 1), 'position and lineno/offset out of sync')
+            self.assertEqual(
+                e.position,
+                (e.lineno, e.offset + 1),
+                "position and lineno/offset out of sync",
+            )
             # SyntaxError info derived from file & contents
-            self.assertTrue(e.filename.endswith(broken_xml_name), 'filename must be preserved')
+            self.assertTrue(
+                e.filename.endswith(broken_xml_name),
+                "filename must be preserved",
+            )
             self.assertEqual(e.lineno, 1)
             self.assertEqual(e.offset, 10)
         except Exception as e:
-            self.fail('{0}, not {1}'.format(fail_msg, type(e)))
+            self.fail("{0}, not {1}".format(fail_msg, type(e)))
         else:
-            self.fail('test_broken.xml should raise an etree.XMLSyntaxError')
+            self.fail("test_broken.xml should raise an etree.XMLSyntaxError")
 
 
 def test_suite():
@@ -73,5 +82,6 @@ def test_suite():
     suite.addTests([unittest.makeSuite(ErrorTestCase)])
     return suite
 
-if __name__ == '__main__':
-    print('to test use test.py %s' % __file__)
+
+if __name__ == "__main__":
+    print("to test use test.py %s" % __file__)

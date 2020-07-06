@@ -8,14 +8,21 @@ from __future__ import absolute_import
 
 import unittest
 
-from .common_imports import etree, BytesIO, HelperTestCase, fileInTestDir, make_doctest
+from .common_imports import (
+    etree,
+    BytesIO,
+    HelperTestCase,
+    fileInTestDir,
+    make_doctest,
+)
 
 
 class ETreeXMLSchemaTestCase(HelperTestCase):
     def test_xmlschema(self):
-        tree_valid = self.parse('<a><b></b></a>')
-        tree_invalid = self.parse('<a><c></c></a>')
-        schema = self.parse('''
+        tree_valid = self.parse("<a><b></b></a>")
+        tree_invalid = self.parse("<a><c></c></a>")
+        schema = self.parse(
+            """
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <xsd:element name="a" type="AType"/>
   <xsd:complexType name="AType">
@@ -24,17 +31,19 @@ class ETreeXMLSchemaTestCase(HelperTestCase):
     </xsd:sequence>
   </xsd:complexType>
 </xsd:schema>
-''')
+"""
+        )
         schema = etree.XMLSchema(schema)
         self.assertTrue(schema.validate(tree_valid))
         self.assertFalse(schema.validate(tree_invalid))
-        self.assertTrue(schema.validate(tree_valid))     # retry valid
+        self.assertTrue(schema.validate(tree_valid))  # retry valid
         self.assertFalse(schema.validate(tree_invalid))  # retry invalid
 
     def test_xmlschema_error_log(self):
-        tree_valid = self.parse('<a><b></b></a>')
-        tree_invalid = self.parse('<a><c></c></a>')
-        schema = self.parse('''
+        tree_valid = self.parse("<a><b></b></a>")
+        tree_invalid = self.parse("<a><c></c></a>")
+        schema = self.parse(
+            """
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <xsd:element name="a" type="AType"/>
   <xsd:complexType name="AType">
@@ -43,23 +52,30 @@ class ETreeXMLSchemaTestCase(HelperTestCase):
     </xsd:sequence>
   </xsd:complexType>
 </xsd:schema>
-''')
+"""
+        )
         schema = etree.XMLSchema(schema)
         self.assertTrue(schema.validate(tree_valid))
         self.assertFalse(schema.error_log.filter_from_errors())
 
         self.assertFalse(schema.validate(tree_invalid))
         self.assertTrue(schema.error_log.filter_from_errors())
-        self.assertTrue(schema.error_log.filter_types(
-            etree.ErrorTypes.SCHEMAV_ELEMENT_CONTENT))
+        self.assertTrue(
+            schema.error_log.filter_types(
+                etree.ErrorTypes.SCHEMAV_ELEMENT_CONTENT
+            )
+        )
 
         self.assertTrue(schema.validate(tree_valid))
         self.assertFalse(schema.error_log.filter_from_errors())
 
         self.assertFalse(schema.validate(tree_invalid))
         self.assertTrue(schema.error_log.filter_from_errors())
-        self.assertTrue(schema.error_log.filter_types(
-            etree.ErrorTypes.SCHEMAV_ELEMENT_CONTENT))
+        self.assertTrue(
+            schema.error_log.filter_types(
+                etree.ErrorTypes.SCHEMAV_ELEMENT_CONTENT
+            )
+        )
 
     def test_xmlschema_error_log_path(self):
         """We don't have a guarantee that there will always be a path
@@ -71,8 +87,9 @@ class ETreeXMLSchemaTestCase(HelperTestCase):
         That way, we can at least verify that if we did get a path value
         it wasn't bogus.
         """
-        tree = self.parse('<a><b>42</b><b>dada</b></a>')
-        schema = self.parse('''
+        tree = self.parse("<a><b>42</b><b>dada</b></a>")
+        schema = self.parse(
+            """
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <xsd:element name="a" type="AType"/>
   <xsd:complexType name="AType">
@@ -81,15 +98,17 @@ class ETreeXMLSchemaTestCase(HelperTestCase):
     </xsd:sequence>
   </xsd:complexType>
 </xsd:schema>
-''')
+"""
+        )
         schema = etree.XMLSchema(schema)
         schema.validate(tree)
-        tree_path = tree.getpath(tree.findall('b')[1])
+        tree_path = tree.getpath(tree.findall("b")[1])
         error_path = schema.error_log[0].path
         self.assertTrue(tree_path == error_path)
 
     def test_xmlschema_default_attributes(self):
-        schema = self.parse('''
+        schema = self.parse(
+            """
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <xsd:element name="a" type="AType"/>
   <xsd:complexType name="AType">
@@ -101,27 +120,29 @@ class ETreeXMLSchemaTestCase(HelperTestCase):
     <xsd:attribute name="hardy" type="xsd:string" default="hey" />
   </xsd:complexType>
 </xsd:schema>
-''')
+"""
+        )
         schema = etree.XMLSchema(schema, attribute_defaults=True)
 
         tree = self.parse('<a><b hardy="ho"/><b/><b hardy="ho"/><b/></a>')
 
         root = tree.getroot()
-        self.assertEqual('ho', root[0].get('hardy'))
-        self.assertEqual(None, root[1].get('hardy'))
-        self.assertEqual('ho', root[2].get('hardy'))
-        self.assertEqual(None, root[3].get('hardy'))
+        self.assertEqual("ho", root[0].get("hardy"))
+        self.assertEqual(None, root[1].get("hardy"))
+        self.assertEqual("ho", root[2].get("hardy"))
+        self.assertEqual(None, root[3].get("hardy"))
 
         self.assertTrue(schema(tree))
 
         root = tree.getroot()
-        self.assertEqual('ho', root[0].get('hardy'))
-        self.assertEqual('hey', root[1].get('hardy'))
-        self.assertEqual('ho', root[2].get('hardy'))
-        self.assertEqual('hey', root[3].get('hardy'))
+        self.assertEqual("ho", root[0].get("hardy"))
+        self.assertEqual("hey", root[1].get("hardy"))
+        self.assertEqual("ho", root[2].get("hardy"))
+        self.assertEqual("hey", root[3].get("hardy"))
 
     def test_xmlschema_parse(self):
-        schema = self.parse('''
+        schema = self.parse(
+            """
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <xsd:element name="a" type="AType"/>
   <xsd:complexType name="AType">
@@ -130,19 +151,22 @@ class ETreeXMLSchemaTestCase(HelperTestCase):
     </xsd:sequence>
   </xsd:complexType>
 </xsd:schema>
-''')
+"""
+        )
         schema = etree.XMLSchema(schema)
         parser = etree.XMLParser(schema=schema)
 
-        tree_valid = self.parse('<a><b></b></a>', parser=parser)
-        self.assertEqual('a', tree_valid.getroot().tag)
+        tree_valid = self.parse("<a><b></b></a>", parser=parser)
+        self.assertEqual("a", tree_valid.getroot().tag)
 
-        self.assertRaises(etree.XMLSyntaxError,
-                          self.parse, '<a><c></c></a>', parser=parser)
+        self.assertRaises(
+            etree.XMLSyntaxError, self.parse, "<a><c></c></a>", parser=parser
+        )
 
     def test_xmlschema_parse_default_attributes(self):
         # does not work as of libxml2 2.7.3
-        schema = self.parse('''
+        schema = self.parse(
+            """
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <xsd:element name="a" type="AType"/>
   <xsd:complexType name="AType">
@@ -154,21 +178,24 @@ class ETreeXMLSchemaTestCase(HelperTestCase):
     <xsd:attribute name="hardy" type="xsd:string" default="hey" />
   </xsd:complexType>
 </xsd:schema>
-''')
+"""
+        )
         schema = etree.XMLSchema(schema)
         parser = etree.XMLParser(schema=schema, attribute_defaults=True)
 
-        tree_valid = self.parse('<a><b hardy="ho"/><b/><b hardy="ho"/><b/></a>',
-                                parser=parser)
+        tree_valid = self.parse(
+            '<a><b hardy="ho"/><b/><b hardy="ho"/><b/></a>', parser=parser
+        )
         root = tree_valid.getroot()
-        self.assertEqual('ho', root[0].get('hardy'))
-        self.assertEqual('hey', root[1].get('hardy'))
-        self.assertEqual('ho', root[2].get('hardy'))
-        self.assertEqual('hey', root[3].get('hardy'))
+        self.assertEqual("ho", root[0].get("hardy"))
+        self.assertEqual("hey", root[1].get("hardy"))
+        self.assertEqual("ho", root[2].get("hardy"))
+        self.assertEqual("hey", root[3].get("hardy"))
 
     def test_xmlschema_parse_default_attributes_schema_config(self):
         # does not work as of libxml2 2.7.3
-        schema = self.parse('''
+        schema = self.parse(
+            """
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <xsd:element name="a" type="AType"/>
   <xsd:complexType name="AType">
@@ -180,21 +207,24 @@ class ETreeXMLSchemaTestCase(HelperTestCase):
     <xsd:attribute name="hardy" type="xsd:string" default="hey" />
   </xsd:complexType>
 </xsd:schema>
-''')
+"""
+        )
         schema = etree.XMLSchema(schema, attribute_defaults=True)
         parser = etree.XMLParser(schema=schema)
 
-        tree_valid = self.parse('<a><b hardy="ho"/><b/><b hardy="ho"/><b/></a>',
-                                parser=parser)
+        tree_valid = self.parse(
+            '<a><b hardy="ho"/><b/><b hardy="ho"/><b/></a>', parser=parser
+        )
         root = tree_valid.getroot()
-        self.assertEqual('ho', root[0].get('hardy'))
-        self.assertEqual('hey', root[1].get('hardy'))
-        self.assertEqual('ho', root[2].get('hardy'))
-        self.assertEqual('hey', root[3].get('hardy'))
+        self.assertEqual("ho", root[0].get("hardy"))
+        self.assertEqual("hey", root[1].get("hardy"))
+        self.assertEqual("ho", root[2].get("hardy"))
+        self.assertEqual("hey", root[3].get("hardy"))
 
     def test_xmlschema_parse_fixed_attributes(self):
         # does not work as of libxml2 2.7.3
-        schema = self.parse('''
+        schema = self.parse(
+            """
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <xsd:element name="a" type="AType"/>
   <xsd:complexType name="AType">
@@ -206,19 +236,22 @@ class ETreeXMLSchemaTestCase(HelperTestCase):
     <xsd:attribute name="hardy" type="xsd:string" fixed="hey" />
   </xsd:complexType>
 </xsd:schema>
-''')
+"""
+        )
         schema = etree.XMLSchema(schema)
         parser = etree.XMLParser(schema=schema, attribute_defaults=True)
 
-        tree_valid = self.parse('<a><b/><b hardy="hey"/><b/></a>',
-                                parser=parser)
+        tree_valid = self.parse(
+            '<a><b/><b hardy="hey"/><b/></a>', parser=parser
+        )
         root = tree_valid.getroot()
-        self.assertEqual('hey', root[0].get('hardy'))
-        self.assertEqual('hey', root[1].get('hardy'))
-        self.assertEqual('hey', root[2].get('hardy'))
+        self.assertEqual("hey", root[0].get("hardy"))
+        self.assertEqual("hey", root[1].get("hardy"))
+        self.assertEqual("hey", root[2].get("hardy"))
 
     def test_xmlschema_stringio(self):
-        schema_file = BytesIO('''
+        schema_file = BytesIO(
+            """
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <xsd:element name="a" type="AType"/>
   <xsd:complexType name="AType">
@@ -227,18 +260,21 @@ class ETreeXMLSchemaTestCase(HelperTestCase):
     </xsd:sequence>
   </xsd:complexType>
 </xsd:schema>
-''')
+"""
+        )
         schema = etree.XMLSchema(file=schema_file)
         parser = etree.XMLParser(schema=schema)
 
-        tree_valid = self.parse('<a><b></b></a>', parser=parser)
-        self.assertEqual('a', tree_valid.getroot().tag)
+        tree_valid = self.parse("<a><b></b></a>", parser=parser)
+        self.assertEqual("a", tree_valid.getroot().tag)
 
-        self.assertRaises(etree.XMLSyntaxError,
-                          self.parse, '<a><c></c></a>', parser=parser)
+        self.assertRaises(
+            etree.XMLSyntaxError, self.parse, "<a><c></c></a>", parser=parser
+        )
 
     def test_xmlschema_iterparse(self):
-        schema = self.parse('''
+        schema = self.parse(
+            """
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <xsd:element name="a" type="AType"/>
   <xsd:complexType name="AType">
@@ -247,17 +283,20 @@ class ETreeXMLSchemaTestCase(HelperTestCase):
     </xsd:sequence>
   </xsd:complexType>
 </xsd:schema>
-''')
+"""
+        )
         schema = etree.XMLSchema(schema)
-        xml = BytesIO('<a><b></b></a>')
-        events = [ (event, el.tag)
-                   for (event, el) in etree.iterparse(xml, schema=schema) ]
+        xml = BytesIO("<a><b></b></a>")
+        events = [
+            (event, el.tag)
+            for (event, el) in etree.iterparse(xml, schema=schema)
+        ]
 
-        self.assertEqual([('end', 'b'), ('end', 'a')],
-                          events)
+        self.assertEqual([("end", "b"), ("end", "a")], events)
 
     def test_xmlschema_iterparse_incomplete(self):
-        schema = self.parse('''
+        schema = self.parse(
+            """
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <xsd:element name="a" type="AType"/>
   <xsd:complexType name="AType">
@@ -266,15 +305,17 @@ class ETreeXMLSchemaTestCase(HelperTestCase):
     </xsd:sequence>
   </xsd:complexType>
 </xsd:schema>
-''')
+"""
+        )
         schema = etree.XMLSchema(schema)
-        xml = BytesIO('<a><b></b></a>')
+        xml = BytesIO("<a><b></b></a>")
         event, element = next(iter(etree.iterparse(xml, schema=schema)))
-        self.assertEqual('end', event)
-        self.assertEqual('b', element.tag)
+        self.assertEqual("end", event)
+        self.assertEqual("b", element.tag)
 
     def test_xmlschema_iterparse_fail(self):
-        schema = self.parse('''
+        schema = self.parse(
+            """
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <xsd:element name="a" type="AType"/>
   <xsd:complexType name="AType">
@@ -283,36 +324,42 @@ class ETreeXMLSchemaTestCase(HelperTestCase):
     </xsd:sequence>
   </xsd:complexType>
 </xsd:schema>
-''')
+"""
+        )
         schema = etree.XMLSchema(schema)
         self.assertRaises(
             etree.XMLSyntaxError,
-            list, etree.iterparse(BytesIO('<a><c></c></a>'), schema=schema))
+            list,
+            etree.iterparse(BytesIO("<a><c></c></a>"), schema=schema),
+        )
 
     def test_xmlschema_elementtree_error(self):
         self.assertRaises(ValueError, etree.XMLSchema, etree.ElementTree())
 
     def test_xmlschema_comment_error(self):
-        self.assertRaises(ValueError, etree.XMLSchema, etree.Comment('TEST'))
+        self.assertRaises(ValueError, etree.XMLSchema, etree.Comment("TEST"))
 
     def test_xmlschema_illegal_validation_error(self):
-        schema = self.parse('''
+        schema = self.parse(
+            """
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <xsd:element name="a" type="xsd:string"/>
 </xsd:schema>
-''')
+"""
+        )
         schema = etree.XMLSchema(schema)
 
-        root = etree.Element('a')
-        root.text = 'TEST'
+        root = etree.Element("a")
+        root.text = "TEST"
         self.assertTrue(schema(root))
 
-        self.assertRaises(ValueError, schema, etree.Comment('TEST'))
-        self.assertRaises(ValueError, schema, etree.PI('a', 'text'))
-        self.assertRaises(ValueError, schema, etree.Entity('text'))
+        self.assertRaises(ValueError, schema, etree.Comment("TEST"))
+        self.assertRaises(ValueError, schema, etree.PI("a", "text"))
+        self.assertRaises(ValueError, schema, etree.Entity("text"))
 
     def test_xmlschema_invalid_schema1(self):
-        schema = self.parse('''\
+        schema = self.parse(
+            """\
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <element name="a" type="AType"/>
   <xsd:complexType name="AType">
@@ -321,38 +368,39 @@ class ETreeXMLSchemaTestCase(HelperTestCase):
     </xsd:sequence>
   </xsd:complexType>
 </xsd:schema>
-''')
-        self.assertRaises(etree.XMLSchemaParseError,
-                          etree.XMLSchema, schema)
+"""
+        )
+        self.assertRaises(etree.XMLSchemaParseError, etree.XMLSchema, schema)
 
     def test_xmlschema_invalid_schema2(self):
-        schema = self.parse('<test/>')
-        self.assertRaises(etree.XMLSchemaParseError,
-                          etree.XMLSchema, schema)
+        schema = self.parse("<test/>")
+        self.assertRaises(etree.XMLSchemaParseError, etree.XMLSchema, schema)
 
     def test_xmlschema_file(self):
         # this will only work if we access the file through path or
         # file object..
-        f = open(fileInTestDir('test.xsd'), 'rb')
+        f = open(fileInTestDir("test.xsd"), "rb")
         try:
             schema = etree.XMLSchema(file=f)
         finally:
             f.close()
-        tree_valid = self.parse('<a><b></b></a>')
+        tree_valid = self.parse("<a><b></b></a>")
         self.assertTrue(schema.validate(tree_valid))
 
     def test_xmlschema_import_file(self):
         # this will only work if we access the file through path or
         # file object..
-        schema = etree.XMLSchema(file=fileInTestDir('test_import.xsd'))
+        schema = etree.XMLSchema(file=fileInTestDir("test_import.xsd"))
         tree_valid = self.parse(
-            '<a:x xmlns:a="http://codespeak.net/lxml/schema/ns1"><b></b></a:x>')
+            '<a:x xmlns:a="http://codespeak.net/lxml/schema/ns1"><b></b></a:x>'
+        )
         self.assertTrue(schema.validate(tree_valid))
 
     def test_xmlschema_shortcut(self):
-        tree_valid = self.parse('<a><b></b></a>')
-        tree_invalid = self.parse('<a><c></c></a>')
-        schema = self.parse('''\
+        tree_valid = self.parse("<a><b></b></a>")
+        tree_invalid = self.parse("<a><c></c></a>")
+        schema = self.parse(
+            """\
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <xsd:element name="a" type="AType"/>
   <xsd:complexType name="AType">
@@ -361,13 +409,15 @@ class ETreeXMLSchemaTestCase(HelperTestCase):
     </xsd:sequence>
   </xsd:complexType>
 </xsd:schema>
-''')
+"""
+        )
         self.assertTrue(tree_valid.xmlschema(schema))
         self.assertFalse(tree_invalid.xmlschema(schema))
 
     def test_create_from_partial_doc(self):
         # this used to crash because the schema part was not properly copied out
-        wsdl = self.parse('''\
+        wsdl = self.parse(
+            """\
 <wsdl:definitions
    xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
    xmlns:xs="http://www.w3.org/2001/XMLSchema">
@@ -376,7 +426,8 @@ class ETreeXMLSchemaTestCase(HelperTestCase):
   </xs:schema>
  </wsdl:types>
 </wsdl:definitions>
-        ''')
+        """
+        )
         schema_element = wsdl.find(
             "{http://schemas.xmlsoap.org/wsdl/}types/"
             "{http://www.w3.org/2001/XMLSchema}schema"
@@ -387,21 +438,25 @@ class ETreeXMLSchemaTestCase(HelperTestCase):
 
 
 class ETreeXMLSchemaResolversTestCase(HelperTestCase):
-    resolver_schema_int = BytesIO("""\
+    resolver_schema_int = BytesIO(
+        """\
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
     xmlns:etype="http://codespeak.net/lxml/test/external"
     targetNamespace="http://codespeak.net/lxml/test/internal">
         <xsd:import namespace="http://codespeak.net/lxml/test/external" schemaLocation="XXX.xsd" />
         <xsd:element name="a" type="etype:AType"/>
-</xsd:schema>""")
+</xsd:schema>"""
+    )
 
-    resolver_schema_int2 = BytesIO("""\
+    resolver_schema_int2 = BytesIO(
+        """\
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
     xmlns:etype="http://codespeak.net/lxml/test/external"
     targetNamespace="http://codespeak.net/lxml/test/internal">
         <xsd:import namespace="http://codespeak.net/lxml/test/external" schemaLocation="YYY.xsd" />
         <xsd:element name="a" type="etype:AType"/>
-</xsd:schema>""")
+</xsd:schema>"""
+    )
 
     resolver_schema_ext = """\
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
@@ -416,7 +471,7 @@ class ETreeXMLSchemaResolversTestCase(HelperTestCase):
             self.schema = schema
 
         def resolve(self, url, id, context):
-            assert url == 'XXX.xsd'
+            assert url == "XXX.xsd"
             return self.resolve_string(self.schema, context)
 
     # tests:
@@ -425,7 +480,7 @@ class ETreeXMLSchemaResolversTestCase(HelperTestCase):
         # test that resolvers work with schema.
         parser = etree.XMLParser()
         parser.resolvers.add(self.simple_resolver(self.resolver_schema_ext))
-        schema_doc = etree.parse(self.resolver_schema_int, parser = parser)
+        schema_doc = etree.parse(self.resolver_schema_int, parser=parser)
         schema = etree.XMLSchema(schema_doc)
 
     def test_xmlschema_resolvers_root(self):
@@ -452,7 +507,7 @@ class ETreeXMLSchemaResolversTestCase(HelperTestCase):
         parser = etree.XMLParser()
         parser.resolvers.add(self.simple_resolver(self.resolver_schema_ext))
 
-        schema_doc = etree.parse(self.resolver_schema_int, parser = parser)
+        schema_doc = etree.parse(self.resolver_schema_int, parser=parser)
         schema = etree.XMLSchema(schema_doc)
         etree.get_default_parser().resolvers.remove(root_resolver)
 
@@ -466,7 +521,7 @@ class ETreeXMLSchemaResolversTestCase(HelperTestCase):
                 self.ext_schema = ext_schema
 
             def resolve(self, url, id, context):
-                assert url == 'YYY.xsd'
+                assert url == "YYY.xsd"
                 return self.resolve_string(self.ext_schema, context)
 
         class res(etree.Resolver):
@@ -475,18 +530,22 @@ class ETreeXMLSchemaResolversTestCase(HelperTestCase):
                 self.ext_schema_2 = ext_schema_2
 
             def resolve(self, url, id, context):
-                assert url == 'XXX.xsd'
+                assert url == "XXX.xsd"
 
                 new_parser = etree.XMLParser()
                 new_parser.resolvers.add(res_nested(self.ext_schema_2))
-                new_schema_doc = etree.parse(self.ext_schema_1, parser = new_parser)
+                new_schema_doc = etree.parse(
+                    self.ext_schema_1, parser=new_parser
+                )
                 new_schema = etree.XMLSchema(new_schema_doc)
 
                 return self.resolve_string(resolver_schema, context)
 
         parser = etree.XMLParser()
-        parser.resolvers.add(res(self.resolver_schema_int2, self.resolver_schema_ext))
-        schema_doc = etree.parse(self.resolver_schema_int, parser = parser)
+        parser.resolvers.add(
+            res(self.resolver_schema_int2, self.resolver_schema_ext)
+        )
+        schema_doc = etree.parse(self.resolver_schema_int, parser=parser)
         schema = etree.XMLSchema(schema_doc)
 
 
@@ -494,10 +553,9 @@ def test_suite():
     suite = unittest.TestSuite()
     suite.addTests([unittest.makeSuite(ETreeXMLSchemaTestCase)])
     suite.addTests([unittest.makeSuite(ETreeXMLSchemaResolversTestCase)])
-    suite.addTests(
-        [make_doctest('../../../doc/validation.txt')])
+    suite.addTests([make_doctest("../../../doc/validation.txt")])
     return suite
 
 
-if __name__ == '__main__':
-    print('to test use test.py %s' % __file__)
+if __name__ == "__main__":
+    print("to test use test.py %s" % __file__)

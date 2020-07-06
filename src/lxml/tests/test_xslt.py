@@ -20,40 +20,50 @@ is_python3 = sys.version_info[0] >= 3
 
 try:
     unicode
-except NameError: # Python 3
+except NameError:  # Python 3
     unicode = str
 
 try:
     basestring
-except NameError: # Python 3
+except NameError:  # Python 3
     basestring = str
 
 from .common_imports import (
-    etree, BytesIO, HelperTestCase, fileInTestDir, _bytes, make_doctest, skipif
+    etree,
+    BytesIO,
+    HelperTestCase,
+    fileInTestDir,
+    _bytes,
+    make_doctest,
+    skipif,
 )
 
 
 class ETreeXSLTTestCase(HelperTestCase):
     """XSLT tests etree"""
-        
+
     def test_xslt(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="*" />
   <xsl:template match="/">
     <foo><xsl:value-of select="/a/b/text()" /></foo>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
         res = st(tree)
-        self.assertEqual('''\
+        self.assertEqual(
+            """\
 <?xml version="1.0"?>
 <foo>B</foo>
-''',
-                          str(res))
+""",
+            str(res),
+        )
 
     def test_xslt_elementtree_error(self):
         self.assertRaises(ValueError, etree.XSLT, etree.ElementTree())
@@ -62,100 +72,120 @@ class ETreeXSLTTestCase(HelperTestCase):
         self.assertRaises(TypeError, etree.XSLT, None)
 
     def test_xslt_invalid_stylesheet(self):
-        style = self.parse('''\
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
         xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
     <xsl:stylesheet />
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
-        self.assertRaises(
-            etree.XSLTParseError, etree.XSLT, style)
+        self.assertRaises(etree.XSLTParseError, etree.XSLT, style)
 
     def test_xslt_copy(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="*" />
   <xsl:template match="/">
     <foo><xsl:value-of select="/a/b/text()" /></foo>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         transform = etree.XSLT(style)
         res = transform(tree)
-        self.assertEqual('''\
+        self.assertEqual(
+            """\
 <?xml version="1.0"?>
 <foo>B</foo>
-''',
-                          str(res))
+""",
+            str(res),
+        )
 
         transform_copy = copy.deepcopy(transform)
         res = transform_copy(tree)
-        self.assertEqual('''\
+        self.assertEqual(
+            """\
 <?xml version="1.0"?>
 <foo>B</foo>
-''',
-                          str(res))
+""",
+            str(res),
+        )
 
         transform = etree.XSLT(style)
         res = transform(tree)
-        self.assertEqual('''\
+        self.assertEqual(
+            """\
 <?xml version="1.0"?>
 <foo>B</foo>
-''',
-                          str(res))
+""",
+            str(res),
+        )
 
     @contextlib.contextmanager
     def _xslt_setup(
-            self, encoding='UTF-16', expected_encoding=None,
-            expected='<?xml version="1.0" encoding="%(ENCODING)s"?><foo>\\uF8D2</foo>'):
-        tree = self.parse(_bytes('<a><b>\\uF8D2</b><c>\\uF8D2</c></a>'
-                                 ).decode("unicode_escape"))
-        style = self.parse('''\
+        self,
+        encoding="UTF-16",
+        expected_encoding=None,
+        expected='<?xml version="1.0" encoding="%(ENCODING)s"?><foo>\\uF8D2</foo>',
+    ):
+        tree = self.parse(
+            _bytes("<a><b>\\uF8D2</b><c>\\uF8D2</c></a>").decode(
+                "unicode_escape"
+            )
+        )
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:output encoding="%(ENCODING)s"/>
   <xsl:template match="/">
     <foo><xsl:value-of select="/a/b/text()" /></foo>
   </xsl:template>
-</xsl:stylesheet>''' % {'ENCODING': encoding})
+</xsl:stylesheet>"""
+            % {"ENCODING": encoding}
+        )
 
         st = etree.XSLT(style)
         res = st(tree)
-        expected = _bytes(dedent(expected).strip()).decode("unicode_escape").replace('\n', '') % {
-            'ENCODING': expected_encoding or encoding,
-        }
+        expected = _bytes(dedent(expected).strip()).decode(
+            "unicode_escape"
+        ).replace("\n", "") % {"ENCODING": expected_encoding or encoding,}
 
         data = [res]
         yield data
-        self.assertEqual(expected, data[0].replace('\n', ''))
+        self.assertEqual(expected, data[0].replace("\n", ""))
 
     def test_xslt_utf8(self):
-        with self._xslt_setup(encoding='UTF-8') as res:
-            res[0] = unicode(bytes(res[0]), 'UTF-8')
-            assert 'UTF-8' in res[0]
+        with self._xslt_setup(encoding="UTF-8") as res:
+            res[0] = unicode(bytes(res[0]), "UTF-8")
+            assert "UTF-8" in res[0]
 
     def test_xslt_encoding(self):
         with self._xslt_setup() as res:
-            res[0] = unicode(bytes(res[0]), 'UTF-16')
-            assert 'UTF-16' in res[0]
+            res[0] = unicode(bytes(res[0]), "UTF-16")
+            assert "UTF-16" in res[0]
 
     def test_xslt_encoding_override(self):
-        with self._xslt_setup(encoding='UTF-8', expected_encoding='UTF-16') as res:
+        with self._xslt_setup(
+            encoding="UTF-8", expected_encoding="UTF-16"
+        ) as res:
             f = BytesIO()
-            res[0].write(f, encoding='UTF-16')
+            res[0].write(f, encoding="UTF-16")
             if is_python3:
-                output = str(f.getvalue(), 'UTF-16')
+                output = str(f.getvalue(), "UTF-16")
             else:
-                output = unicode(str(f.getvalue()), 'UTF-16')
+                output = unicode(str(f.getvalue()), "UTF-16")
             res[0] = output.replace("'", '"')
 
     def test_xslt_write_output_bytesio(self):
         with self._xslt_setup() as res:
             f = BytesIO()
             res[0].write_output(f)
-            res[0] = f.getvalue().decode('UTF-16')
+            res[0] = f.getvalue().decode("UTF-16")
 
     def test_xslt_write_output_failure(self):
         class Writer(object):
@@ -178,7 +208,7 @@ class ETreeXSLTTestCase(HelperTestCase):
                     res[0].write_output(f)
                 finally:
                     f.close()
-                with io.open(f.name, encoding='UTF-16') as f:
+                with io.open(f.name, encoding="UTF-16") as f:
                     res[0] = f.read()
             finally:
                 os.unlink(f.name)
@@ -199,7 +229,9 @@ class ETreeXSLTTestCase(HelperTestCase):
     def test_xslt_write_output_file_path_urlescaped(self):
         # libxml2 should not unescape file paths.
         with self._xslt_setup() as res:
-            f = NamedTemporaryFile(prefix='tmp%2e', suffix='.xml.gz', delete=False)
+            f = NamedTemporaryFile(
+                prefix="tmp%2e", suffix=".xml.gz", delete=False
+            )
             try:
                 try:
                     res[0].write_output(f.name, compression=3)
@@ -212,7 +244,9 @@ class ETreeXSLTTestCase(HelperTestCase):
 
     def test_xslt_write_output_file_path_urlescaped_plus(self):
         with self._xslt_setup() as res:
-            f = NamedTemporaryFile(prefix='p+%2e', suffix='.xml.gz', delete=False)
+            f = NamedTemporaryFile(
+                prefix="p+%2e", suffix=".xml.gz", delete=False
+            )
             try:
                 try:
                     res[0].write_output(f.name, compression=1)
@@ -224,61 +258,72 @@ class ETreeXSLTTestCase(HelperTestCase):
                 os.unlink(f.name)
 
     def test_xslt_write_output_file_oserror(self):
-        with self._xslt_setup(expected='') as res:
+        with self._xslt_setup(expected="") as res:
             tempdir = mkdtemp()
             try:
-                res[0].write_output(os.path.join(tempdir, 'missing_subdir', 'out.xml'))
+                res[0].write_output(
+                    os.path.join(tempdir, "missing_subdir", "out.xml")
+                )
             except IOError:
-                res[0] = ''
+                res[0] = ""
             else:
                 self.fail("IOError not raised")
             finally:
                 os.rmdir(tempdir)
 
     def test_xslt_unicode(self):
-        expected = '''
+        expected = """
             <?xml version="1.0"?>
             <foo>\\uF8D2</foo>
-        '''
+        """
         with self._xslt_setup(expected=expected) as res:
             res[0] = unicode(res[0])
 
     def test_xslt_unicode_standalone(self):
-        tree = self.parse(_bytes('<a><b>\\uF8D2</b><c>\\uF8D2</c></a>'
-        ).decode("unicode_escape"))
-        style = self.parse('''\
+        tree = self.parse(
+            _bytes("<a><b>\\uF8D2</b><c>\\uF8D2</c></a>").decode(
+                "unicode_escape"
+            )
+        )
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:output encoding="UTF-16" standalone="no"/>
   <xsl:template match="/">
     <foo><xsl:value-of select="/a/b/text()" /></foo>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
         res = st(tree)
-        expected = _bytes('''\
+        expected = _bytes(
+            """\
 <?xml version="1.0" standalone="no"?>
 <foo>\\uF8D2</foo>
-''').decode("unicode_escape")
-        self.assertEqual(expected,
-                         unicode(res))
+"""
+        ).decode("unicode_escape")
+        self.assertEqual(expected, unicode(res))
 
     def test_xslt_input(self):
-        style = self.parse('''\
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="*" />
   <xsl:template match="/">
     <foo><xsl:value-of select="/a/b/text()" /></foo>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
         st = etree.XSLT(style.getroot())
 
     def test_xslt_input_partial_doc(self):
-        style = self.parse('''\
+        style = self.parse(
+            """\
 <otherroot>
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -287,7 +332,8 @@ class ETreeXSLTTestCase(HelperTestCase):
     <foo><xsl:value-of select="/a/b/text()" /></foo>
   </xsl:template>
 </xsl:stylesheet>
-</otherroot>''')
+</otherroot>"""
+        )
 
         self.assertRaises(etree.XSLTParseError, etree.XSLT, style)
         root_node = style.getroot()
@@ -295,38 +341,43 @@ class ETreeXSLTTestCase(HelperTestCase):
         st = etree.XSLT(root_node[0])
 
     def test_xslt_broken(self):
-        style = self.parse('''\
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
     <xsl:foo />
-</xsl:stylesheet>''')
-        self.assertRaises(etree.XSLTParseError,
-                          etree.XSLT, style)
+</xsl:stylesheet>"""
+        )
+        self.assertRaises(etree.XSLTParseError, etree.XSLT, style)
 
     def test_xslt_parsing_error_log(self):
-        tree = self.parse('<a/>')
-        style = self.parse('''\
+        tree = self.parse("<a/>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
     <xsl:foo />
-</xsl:stylesheet>''')
-        self.assertRaises(etree.XSLTParseError,
-                          etree.XSLT, style)
+</xsl:stylesheet>"""
+        )
+        self.assertRaises(etree.XSLTParseError, etree.XSLT, style)
         exc = None
         try:
             etree.XSLT(style)
         except etree.XSLTParseError as e:
             exc = e
         else:
-            self.assertFalse(True, "XSLT processing should have failed but didn't")
+            self.assertFalse(
+                True, "XSLT processing should have failed but didn't"
+            )
         self.assertTrue(exc is not None)
         self.assertTrue(len(exc.error_log))
         for error in exc.error_log:
-            self.assertTrue(':ERROR:XSLT:' in str(error))
+            self.assertTrue(":ERROR:XSLT:" in str(error))
 
     def test_xslt_apply_error_log(self):
-        tree = self.parse('<a/>')
-        style = self.parse('''\
+        tree = self.parse("<a/>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
     <xsl:template match="a">
@@ -334,9 +385,9 @@ class ETreeXSLTTestCase(HelperTestCase):
             <xsl:message terminate="yes">FAIL</xsl:message>
         </xsl:copy>
     </xsl:template>
-</xsl:stylesheet>''')
-        self.assertRaises(etree.XSLTApplyError,
-                          etree.XSLT(style), tree)
+</xsl:stylesheet>"""
+        )
+        self.assertRaises(etree.XSLTApplyError, etree.XSLT(style), tree)
 
         transform = etree.XSLT(style)
         exc = None
@@ -345,87 +396,100 @@ class ETreeXSLTTestCase(HelperTestCase):
         except etree.XSLTApplyError as e:
             exc = e
         else:
-            self.assertFalse(True, "XSLT processing should have failed but didn't")
+            self.assertFalse(
+                True, "XSLT processing should have failed but didn't"
+            )
 
         self.assertTrue(exc is not None)
         self.assertTrue(len(exc.error_log))
         self.assertEqual(len(transform.error_log), len(exc.error_log))
         for error in exc.error_log:
-            self.assertTrue(':ERROR:XSLT:' in str(error))
+            self.assertTrue(":ERROR:XSLT:" in str(error))
         for error in transform.error_log:
-            self.assertTrue(':ERROR:XSLT:' in str(error))
+            self.assertTrue(":ERROR:XSLT:" in str(error))
 
     def test_xslt_parameters(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="/">
     <foo><xsl:value-of select="$bar" /></foo>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
         res = st(tree, bar="'Bar'")
-        self.assertEqual('''\
+        self.assertEqual(
+            """\
 <?xml version="1.0"?>
 <foo>Bar</foo>
-''',
-                          str(res))
+""",
+            str(res),
+        )
 
     def test_xslt_string_parameters(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="/">
     <foo><xsl:value-of select="$bar" /></foo>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
         res = st(tree, bar=etree.XSLT.strparam('''it's me, "Bar"'''))
-        self.assertEqual('''\
+        self.assertEqual(
+            """\
 <?xml version="1.0"?>
 <foo>it's me, "Bar"</foo>
-''',
-                          str(res))
+""",
+            str(res),
+        )
 
     def test_xslt_parameter_invalid(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:param name="bar"/>
   <xsl:template match="/">
     <foo><xsl:value-of select="$bar" /></foo>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
-        res = self.assertRaises(etree.XSLTApplyError,
-                                st, tree, bar="<test/>")
-        res = self.assertRaises(etree.XSLTApplyError,
-                                st, tree, bar="....")
+        res = self.assertRaises(etree.XSLTApplyError, st, tree, bar="<test/>")
+        res = self.assertRaises(etree.XSLTApplyError, st, tree, bar="....")
 
     def test_xslt_parameter_missing(self):
         # apply() without needed parameter will lead to XSLTApplyError
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="/">
     <foo><xsl:value-of select="$bar" /></foo>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
         # at least libxslt 1.1.28 produces this error, earlier ones (e.g. 1.1.18) might not ...
         self.assertRaises(etree.XSLTApplyError, st.apply, tree)
 
     def test_xslt_multiple_parameters(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="*" />
@@ -433,57 +497,69 @@ class ETreeXSLTTestCase(HelperTestCase):
     <foo><xsl:value-of select="$bar" /></foo>
     <foo><xsl:value-of select="$baz" /></foo>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
         res = st(tree, bar="'Bar'", baz="'Baz'")
-        self.assertEqual('''\
+        self.assertEqual(
+            """\
 <?xml version="1.0"?>
 <foo>Bar</foo><foo>Baz</foo>
-''',
-                          str(res))
-        
+""",
+            str(res),
+        )
+
     def test_xslt_parameter_xpath(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="*" />
   <xsl:template match="/">
     <foo><xsl:value-of select="$bar" /></foo>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
         res = st(tree, bar="/a/b/text()")
-        self.assertEqual('''\
+        self.assertEqual(
+            """\
 <?xml version="1.0"?>
 <foo>B</foo>
-''',
-                          str(res))
+""",
+            str(res),
+        )
 
     def test_xslt_parameter_xpath_object(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="*" />
   <xsl:template match="/">
     <foo><xsl:value-of select="$bar" /></foo>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
         res = st(tree, bar=etree.XPath("/a/b/text()"))
-        self.assertEqual('''\
+        self.assertEqual(
+            """\
 <?xml version="1.0"?>
 <foo>B</foo>
-''',
-                          str(res))
-        
+""",
+            str(res),
+        )
+
     def test_xslt_default_parameters(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:param name="bar" select="'Default'" />
@@ -491,25 +567,31 @@ class ETreeXSLTTestCase(HelperTestCase):
   <xsl:template match="/">
     <foo><xsl:value-of select="$bar" /></foo>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
         res = st(tree, bar="'Bar'")
-        self.assertEqual('''\
+        self.assertEqual(
+            """\
 <?xml version="1.0"?>
 <foo>Bar</foo>
-''',
-                          str(res))
+""",
+            str(res),
+        )
         res = st(tree)
-        self.assertEqual('''\
+        self.assertEqual(
+            """\
 <?xml version="1.0"?>
 <foo>Default</foo>
-''',
-                          str(res))
-        
+""",
+            str(res),
+        )
+
     def test_xslt_html_output(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:output method="html"/>
@@ -517,55 +599,55 @@ class ETreeXSLTTestCase(HelperTestCase):
   <xsl:template match="/">
     <html><body><xsl:value-of select="/a/b/text()" /></body></html>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
         res = st(tree)
-        self.assertEqual('<html><body>B</body></html>',
-                          str(res).strip())
+        self.assertEqual("<html><body>B</body></html>", str(res).strip())
 
     def test_xslt_include(self):
-        tree = etree.parse(fileInTestDir('test1.xslt'))
+        tree = etree.parse(fileInTestDir("test1.xslt"))
         st = etree.XSLT(tree)
 
     def test_xslt_include_from_filelike(self):
-        f = open(fileInTestDir('test1.xslt'), 'rb')
+        f = open(fileInTestDir("test1.xslt"), "rb")
         tree = etree.parse(f)
         f.close()
         st = etree.XSLT(tree)
 
     def test_xslt_multiple_transforms(self):
-        xml = '<a/>'
-        xslt = '''\
+        xml = "<a/>"
+        xslt = """\
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
     <xsl:template match="/">
         <response>Some text</response>
     </xsl:template>
 </xsl:stylesheet>
-'''
+"""
         source = self.parse(xml)
         styledoc = self.parse(xslt)
         style = etree.XSLT(styledoc)
         result = style(source)
 
         etree.tostring(result.getroot())
-        
+
         source = self.parse(xml)
         styledoc = self.parse(xslt)
         style = etree.XSLT(styledoc)
         result = style(source)
-        
+
         etree.tostring(result.getroot())
 
     def test_xslt_repeat_transform(self):
-        xml = '<a/>'
-        xslt = '''\
+        xml = "<a/>"
+        xslt = """\
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
     <xsl:template match="/">
         <response>Some text</response>
     </xsl:template>
 </xsl:stylesheet>
-'''
+"""
         source = self.parse(xml)
         styledoc = self.parse(xslt)
         transform = etree.XSLT(styledoc)
@@ -584,58 +666,61 @@ class ETreeXSLTTestCase(HelperTestCase):
 
     def test_xslt_empty(self):
         # could segfault if result contains "empty document"
-        xml = '<blah/>'
-        xslt = '''
+        xml = "<blah/>"
+        xslt = """
         <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
           <xsl:template match="/" />
         </xsl:stylesheet>
-        '''
+        """
 
         source = self.parse(xml)
         styledoc = self.parse(xslt)
         style = etree.XSLT(styledoc)
         result = style(source)
-        self.assertEqual('', str(result))
+        self.assertEqual("", str(result))
 
     def test_xslt_message(self):
-        xml = '<blah/>'
-        xslt = '''
+        xml = "<blah/>"
+        xslt = """
         <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
           <xsl:template match="/">
             <xsl:message>TEST TEST TEST</xsl:message>
           </xsl:template>
         </xsl:stylesheet>
-        '''
+        """
 
         source = self.parse(xml)
         styledoc = self.parse(xslt)
         style = etree.XSLT(styledoc)
         result = style(source)
-        self.assertEqual('', str(result))
-        self.assertTrue("TEST TEST TEST" in [entry.message
-                                          for entry in style.error_log])
+        self.assertEqual("", str(result))
+        self.assertTrue(
+            "TEST TEST TEST" in [entry.message for entry in style.error_log]
+        )
 
     def test_xslt_message_terminate(self):
-        xml = '<blah/>'
-        xslt = '''
+        xml = "<blah/>"
+        xslt = """
         <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
           <xsl:template match="/">
             <xsl:message terminate="yes">TEST TEST TEST</xsl:message>
           </xsl:template>
         </xsl:stylesheet>
-        '''
+        """
 
         source = self.parse(xml)
         styledoc = self.parse(xslt)
         style = etree.XSLT(styledoc)
 
         self.assertRaises(etree.XSLTApplyError, style, source)
-        self.assertTrue("TEST TEST TEST" in [entry.message
-                                          for entry in style.error_log])
+        self.assertTrue(
+            "TEST TEST TEST" in [entry.message for entry in style.error_log]
+        )
 
     def test_xslt_shortcut(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="*" />
@@ -645,129 +730,150 @@ class ETreeXSLTTestCase(HelperTestCase):
     <foo><xsl:value-of select="$baz" /></foo>
     </doc>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         result = tree.xslt(style, bar="'Bar'", baz="'Baz'")
         self.assertEqual(
-            _bytes('<doc><foo>Bar</foo><foo>Baz</foo></doc>'),
-            etree.tostring(result.getroot()))
-        
+            _bytes("<doc><foo>Bar</foo><foo>Baz</foo></doc>"),
+            etree.tostring(result.getroot()),
+        )
+
     def test_multiple_elementrees(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="a"><A><xsl:apply-templates/></A></xsl:template>
   <xsl:template match="b"><B><xsl:apply-templates/></B></xsl:template>
   <xsl:template match="c"><C><xsl:apply-templates/></C></xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
-        self.assertEqual(self._rootstring(tree),
-                          _bytes('<a><b>B</b><c>C</c></a>'))
+        self.assertEqual(
+            self._rootstring(tree), _bytes("<a><b>B</b><c>C</c></a>")
+        )
         result = tree.xslt(style)
-        self.assertEqual(self._rootstring(tree),
-                          _bytes('<a><b>B</b><c>C</c></a>'))
-        self.assertEqual(self._rootstring(result),
-                          _bytes('<A><B>B</B><C>C</C></A>'))
+        self.assertEqual(
+            self._rootstring(tree), _bytes("<a><b>B</b><c>C</c></a>")
+        )
+        self.assertEqual(
+            self._rootstring(result), _bytes("<A><B>B</B><C>C</C></A>")
+        )
 
         b_tree = etree.ElementTree(tree.getroot()[0])
-        self.assertEqual(self._rootstring(b_tree),
-                          _bytes('<b>B</b>'))
+        self.assertEqual(self._rootstring(b_tree), _bytes("<b>B</b>"))
         result = b_tree.xslt(style)
-        self.assertEqual(self._rootstring(tree),
-                          _bytes('<a><b>B</b><c>C</c></a>'))
-        self.assertEqual(self._rootstring(result),
-                          _bytes('<B>B</B>'))
+        self.assertEqual(
+            self._rootstring(tree), _bytes("<a><b>B</b><c>C</c></a>")
+        )
+        self.assertEqual(self._rootstring(result), _bytes("<B>B</B>"))
 
         c_tree = etree.ElementTree(tree.getroot()[1])
-        self.assertEqual(self._rootstring(c_tree),
-                          _bytes('<c>C</c>'))
+        self.assertEqual(self._rootstring(c_tree), _bytes("<c>C</c>"))
         result = c_tree.xslt(style)
-        self.assertEqual(self._rootstring(tree),
-                          _bytes('<a><b>B</b><c>C</c></a>'))
-        self.assertEqual(self._rootstring(result),
-                          _bytes('<C>C</C>'))
+        self.assertEqual(
+            self._rootstring(tree), _bytes("<a><b>B</b><c>C</c></a>")
+        )
+        self.assertEqual(self._rootstring(result), _bytes("<C>C</C>"))
 
     def test_xslt_document_XML(self):
         # make sure document('') works from parsed strings
-        xslt = etree.XSLT(etree.XML("""\
+        xslt = etree.XSLT(
+            etree.XML(
+                """\
 <xsl:stylesheet version="1.0"
    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="/">
     <test>TEXT<xsl:copy-of select="document('')//test"/></test>
   </xsl:template>
 </xsl:stylesheet>
-"""))
-        result = xslt(etree.XML('<a/>'))
+"""
+            )
+        )
+        result = xslt(etree.XML("<a/>"))
         root = result.getroot()
-        self.assertEqual(root.tag,
-                          'test')
-        self.assertEqual(root[0].tag,
-                          'test')
-        self.assertEqual(root[0].text,
-                          'TEXT')
-        self.assertEqual(root[0][0].tag,
-                          '{http://www.w3.org/1999/XSL/Transform}copy-of')
+        self.assertEqual(root.tag, "test")
+        self.assertEqual(root[0].tag, "test")
+        self.assertEqual(root[0].text, "TEXT")
+        self.assertEqual(
+            root[0][0].tag, "{http://www.w3.org/1999/XSL/Transform}copy-of"
+        )
 
     def test_xslt_document_parse(self):
         # make sure document('') works from loaded files
         xslt = etree.XSLT(etree.parse(fileInTestDir("test-document.xslt")))
-        result = xslt(etree.XML('<a/>'))
+        result = xslt(etree.XML("<a/>"))
         root = result.getroot()
-        self.assertEqual(root.tag,
-                          'test')
-        self.assertEqual(root[0].tag,
-                          '{http://www.w3.org/1999/XSL/Transform}stylesheet')
+        self.assertEqual(root.tag, "test")
+        self.assertEqual(
+            root[0].tag, "{http://www.w3.org/1999/XSL/Transform}stylesheet"
+        )
 
     def test_xslt_document_elementtree(self):
         # make sure document('') works from loaded files
-        xslt = etree.XSLT(etree.ElementTree(file=fileInTestDir("test-document.xslt")))
-        result = xslt(etree.XML('<a/>'))
+        xslt = etree.XSLT(
+            etree.ElementTree(file=fileInTestDir("test-document.xslt"))
+        )
+        result = xslt(etree.XML("<a/>"))
         root = result.getroot()
-        self.assertEqual(root.tag,
-                          'test')
-        self.assertEqual(root[0].tag,
-                          '{http://www.w3.org/1999/XSL/Transform}stylesheet')
+        self.assertEqual(root.tag, "test")
+        self.assertEqual(
+            root[0].tag, "{http://www.w3.org/1999/XSL/Transform}stylesheet"
+        )
 
     def test_xslt_document_error(self):
-        xslt = etree.XSLT(etree.XML("""\
+        xslt = etree.XSLT(
+            etree.XML(
+                """\
 <xsl:stylesheet version="1.0"
    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="/">
     <test>TEXT<xsl:copy-of select="document('uri:__junkfood__is__evil__')//test"/></test>
   </xsl:template>
 </xsl:stylesheet>
-"""))
+"""
+            )
+        )
 
         errors = None
         try:
-            xslt(etree.XML('<a/>'))
+            xslt(etree.XML("<a/>"))
         except etree.XSLTApplyError as exc:
             errors = exc.error_log
         else:
-            self.assertFalse(True, "XSLT processing should have failed but didn't")
+            self.assertFalse(
+                True, "XSLT processing should have failed but didn't"
+            )
 
         self.assertTrue(len(errors))
         for error in errors:
-            if ':ERROR:XSLT:' in str(error):
+            if ":ERROR:XSLT:" in str(error):
                 break
         else:
-            self.assertFalse(True, 'No XSLT errors found in error log:\n%s' % errors)
+            self.assertFalse(
+                True, "No XSLT errors found in error log:\n%s" % errors
+            )
 
     def test_xslt_document_XML_resolver(self):
         # make sure document('') works when custom resolvers are in use
         assertEqual = self.assertEqual
-        called = {'count' : 0}
+        called = {"count": 0}
+
         class TestResolver(etree.Resolver):
             def resolve(self, url, id, context):
-                assertEqual(url, 'file://ANYTHING')
-                called['count'] += 1
-                return self.resolve_string('<CALLED/>', context)
+                assertEqual(url, "file://ANYTHING")
+                called["count"] += 1
+                return self.resolve_string("<CALLED/>", context)
 
         parser = etree.XMLParser()
         parser.resolvers.add(TestResolver())
 
-        xslt = etree.XSLT(etree.XML(_bytes("""\
+        xslt = etree.XSLT(
+            etree.XML(
+                _bytes(
+                    """\
 <xsl:stylesheet version="1.0"
    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
    xmlns:l="local">
@@ -788,45 +894,42 @@ class ETreeXSLTTestCase(HelperTestCase):
     <l:entry>B</l:entry>
   </l:data>
 </xsl:stylesheet>
-"""), parser))
+"""
+                ),
+                parser,
+            )
+        )
 
-        self.assertEqual(called['count'], 0)
-        result = xslt(etree.XML('<a/>'))
-        self.assertEqual(called['count'], 1)
+        self.assertEqual(called["count"], 0)
+        result = xslt(etree.XML("<a/>"))
+        self.assertEqual(called["count"], 1)
 
         root = result.getroot()
-        self.assertEqual(root.tag,
-                          'test')
+        self.assertEqual(root.tag, "test")
         self.assertEqual(len(root), 4)
 
-        self.assertEqual(root[0].tag,
-                          'CALLED')
-        self.assertEqual(root[1].tag,
-                          '{local}entry')
-        self.assertEqual(root[1].text,
-                          None)
-        self.assertEqual(root[1].get("value"),
-                          'A')
-        self.assertEqual(root[2].tag,
-                          'CALLED')
-        self.assertEqual(root[3].tag,
-                          '{local}entry')
-        self.assertEqual(root[3].text,
-                          None)
-        self.assertEqual(root[3].get("value"),
-                          'B')
+        self.assertEqual(root[0].tag, "CALLED")
+        self.assertEqual(root[1].tag, "{local}entry")
+        self.assertEqual(root[1].text, None)
+        self.assertEqual(root[1].get("value"), "A")
+        self.assertEqual(root[2].tag, "CALLED")
+        self.assertEqual(root[3].tag, "{local}entry")
+        self.assertEqual(root[3].text, None)
+        self.assertEqual(root[3].get("value"), "B")
 
     def test_xslt_resolver_url_building(self):
         assertEqual = self.assertEqual
-        called = {'count' : 0}
+        called = {"count": 0}
         expected_url = None
+
         class TestResolver(etree.Resolver):
             def resolve(self, url, id, context):
                 assertEqual(url, expected_url)
-                called['count'] += 1
-                return self.resolve_string('<CALLED/>', context)
+                called["count"] += 1
+                return self.resolve_string("<CALLED/>", context)
 
-        stylesheet_xml = _bytes("""\
+        stylesheet_xml = _bytes(
+            """\
 <xsl:stylesheet version="1.0"
    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
    xmlns:l="local">
@@ -834,91 +937,119 @@ class ETreeXSLTTestCase(HelperTestCase):
     <xsl:copy-of select="document('test.xml')"/>
   </xsl:template>
 </xsl:stylesheet>
-""")
+"""
+        )
 
         parser = etree.XMLParser()
         parser.resolvers.add(TestResolver())
 
         # test without base_url => relative path only
-        expected_url = 'test.xml'
+        expected_url = "test.xml"
         xslt = etree.XSLT(etree.XML(stylesheet_xml, parser))
 
-        self.assertEqual(called['count'], 0)
-        result = xslt(etree.XML('<a/>'))
-        self.assertEqual(called['count'], 1)
+        self.assertEqual(called["count"], 0)
+        result = xslt(etree.XML("<a/>"))
+        self.assertEqual(called["count"], 1)
 
         # now the same thing with a stylesheet base URL on the filesystem
-        called['count'] = 0
-        expected_url = 'MY/BASE/test.xml'  # seems to be the same on Windows
-        xslt = etree.XSLT(etree.XML(
-            stylesheet_xml, parser,
-            base_url=os.path.join('MY', 'BASE', 'FILE')))
+        called["count"] = 0
+        expected_url = "MY/BASE/test.xml"  # seems to be the same on Windows
+        xslt = etree.XSLT(
+            etree.XML(
+                stylesheet_xml,
+                parser,
+                base_url=os.path.join("MY", "BASE", "FILE"),
+            )
+        )
 
-        self.assertEqual(called['count'], 0)
-        result = xslt(etree.XML('<a/>'))
-        self.assertEqual(called['count'], 1)
+        self.assertEqual(called["count"], 0)
+        result = xslt(etree.XML("<a/>"))
+        self.assertEqual(called["count"], 1)
 
         # now the same thing with a stylesheet base URL
-        called['count'] = 0
-        expected_url = 'http://server.com/BASE/DIR/test.xml'
-        xslt = etree.XSLT(etree.XML(
-            stylesheet_xml, parser,
-            base_url='http://server.com/BASE/DIR/FILE'))
+        called["count"] = 0
+        expected_url = "http://server.com/BASE/DIR/test.xml"
+        xslt = etree.XSLT(
+            etree.XML(
+                stylesheet_xml,
+                parser,
+                base_url="http://server.com/BASE/DIR/FILE",
+            )
+        )
 
-        self.assertEqual(called['count'], 0)
-        result = xslt(etree.XML('<a/>'))
-        self.assertEqual(called['count'], 1)
+        self.assertEqual(called["count"], 0)
+        result = xslt(etree.XML("<a/>"))
+        self.assertEqual(called["count"], 1)
 
         # now the same thing with a stylesheet base file:// URL
-        called['count'] = 0
-        expected_url = 'file://BASE/DIR/test.xml'
-        xslt = etree.XSLT(etree.XML(
-            stylesheet_xml, parser,
-            base_url='file://BASE/DIR/FILE'))
+        called["count"] = 0
+        expected_url = "file://BASE/DIR/test.xml"
+        xslt = etree.XSLT(
+            etree.XML(stylesheet_xml, parser, base_url="file://BASE/DIR/FILE")
+        )
 
-        self.assertEqual(called['count'], 0)
-        result = xslt(etree.XML('<a/>'))
-        self.assertEqual(called['count'], 1)
+        self.assertEqual(called["count"], 0)
+        result = xslt(etree.XML("<a/>"))
+        self.assertEqual(called["count"], 1)
 
     def test_xslt_document_parse_allow(self):
         access_control = etree.XSLTAccessControl(read_file=True)
-        xslt = etree.XSLT(etree.parse(fileInTestDir("test-document.xslt")),
-                          access_control=access_control)
-        result = xslt(etree.XML('<a/>'))
+        xslt = etree.XSLT(
+            etree.parse(fileInTestDir("test-document.xslt")),
+            access_control=access_control,
+        )
+        result = xslt(etree.XML("<a/>"))
         root = result.getroot()
-        self.assertEqual(root.tag,
-                         'test')
-        self.assertEqual(root[0].tag,
-                         '{http://www.w3.org/1999/XSL/Transform}stylesheet')
+        self.assertEqual(root.tag, "test")
+        self.assertEqual(
+            root[0].tag, "{http://www.w3.org/1999/XSL/Transform}stylesheet"
+        )
 
     def test_xslt_document_parse_deny(self):
         access_control = etree.XSLTAccessControl(read_file=False)
-        xslt = etree.XSLT(etree.parse(fileInTestDir("test-document.xslt")),
-                          access_control=access_control)
-        self.assertRaises(etree.XSLTApplyError, xslt, etree.XML('<a/>'))
+        xslt = etree.XSLT(
+            etree.parse(fileInTestDir("test-document.xslt")),
+            access_control=access_control,
+        )
+        self.assertRaises(etree.XSLTApplyError, xslt, etree.XML("<a/>"))
 
     def test_xslt_document_parse_deny_all(self):
         access_control = etree.XSLTAccessControl.DENY_ALL
-        xslt = etree.XSLT(etree.parse(fileInTestDir("test-document.xslt")),
-                          access_control=access_control)
-        self.assertRaises(etree.XSLTApplyError, xslt, etree.XML('<a/>'))
+        xslt = etree.XSLT(
+            etree.parse(fileInTestDir("test-document.xslt")),
+            access_control=access_control,
+        )
+        self.assertRaises(etree.XSLTApplyError, xslt, etree.XML("<a/>"))
 
     def test_xslt_access_control_repr(self):
         access_control = etree.XSLTAccessControl.DENY_ALL
-        self.assertTrue(repr(access_control).startswith(type(access_control).__name__))
+        self.assertTrue(
+            repr(access_control).startswith(type(access_control).__name__)
+        )
         self.assertEqual(repr(access_control), repr(access_control))
-        self.assertNotEqual(repr(etree.XSLTAccessControl.DENY_ALL),
-                            repr(etree.XSLTAccessControl.DENY_WRITE))
-        self.assertNotEqual(repr(etree.XSLTAccessControl.DENY_ALL),
-                            repr(etree.XSLTAccessControl()))
+        self.assertNotEqual(
+            repr(etree.XSLTAccessControl.DENY_ALL),
+            repr(etree.XSLTAccessControl.DENY_WRITE),
+        )
+        self.assertNotEqual(
+            repr(etree.XSLTAccessControl.DENY_ALL),
+            repr(etree.XSLTAccessControl()),
+        )
 
     def test_xslt_move_result(self):
-        root = etree.XML(_bytes('''\
+        root = etree.XML(
+            _bytes(
+                """\
         <transform>
           <widget displayType="fieldset"/>
-        </transform>'''))
+        </transform>"""
+            )
+        )
 
-        xslt = etree.XSLT(etree.XML(_bytes('''\
+        xslt = etree.XSLT(
+            etree.XML(
+                _bytes(
+                    """\
         <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
           <xsl:output method="html" indent="no"/>
           <xsl:template match="/">
@@ -931,28 +1062,36 @@ class ETreeXSLTTestCase(HelperTestCase):
             <xsl:element name="{@displayType}"/>
           </xsl:template>
 
-        </xsl:stylesheet>''')))
+        </xsl:stylesheet>"""
+                )
+            )
+        )
 
         result = xslt(root[0])
         root[:] = result.getroot()[:]
-        del root # segfaulted before
-        
+        del root  # segfaulted before
+
     def test_xslt_pi(self):
-        tree = self.parse('''\
+        tree = self.parse(
+            """\
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="%s"?>
 <a>
   <b>B</b>
   <c>C</c>
-</a>''' % fileInTestDir("test1.xslt"))
+</a>"""
+            % fileInTestDir("test1.xslt")
+        )
 
         style_root = tree.getroot().getprevious().parseXSL().getroot()
-        self.assertEqual("{http://www.w3.org/1999/XSL/Transform}stylesheet",
-                          style_root.tag)
+        self.assertEqual(
+            "{http://www.w3.org/1999/XSL/Transform}stylesheet", style_root.tag
+        )
 
     def test_xslt_pi_embedded_xmlid(self):
         # test xml:id dictionary lookup mechanism
-        tree = self.parse('''\
+        tree = self.parse(
+            """\
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="#style"?>
 <a>
@@ -965,31 +1104,38 @@ class ETreeXSLTTestCase(HelperTestCase):
       <foo><xsl:value-of select="/a/b/text()" /></foo>
     </xsl:template>
   </xsl:stylesheet>
-</a>''')
+</a>"""
+        )
 
         style_root = tree.getroot().getprevious().parseXSL().getroot()
-        self.assertEqual("{http://www.w3.org/1999/XSL/Transform}stylesheet",
-                          style_root.tag)
+        self.assertEqual(
+            "{http://www.w3.org/1999/XSL/Transform}stylesheet", style_root.tag
+        )
 
         st = etree.XSLT(style_root)
         res = st(tree)
-        self.assertEqual('''\
+        self.assertEqual(
+            """\
 <?xml version="1.0"?>
 <foo>B</foo>
-''',
-                          str(res))
+""",
+            str(res),
+        )
 
     def test_xslt_pi_embedded_id(self):
         # test XPath lookup mechanism
-        tree = self.parse('''\
+        tree = self.parse(
+            """\
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="#style"?>
 <a>
   <b>B</b>
   <c>C</c>
-</a>''')
+</a>"""
+        )
 
-        style = self.parse('''\
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0" xml:id="style"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="*" />
@@ -997,42 +1143,50 @@ class ETreeXSLTTestCase(HelperTestCase):
     <foo><xsl:value-of select="/a/b/text()" /></foo>
   </xsl:template>
 </xsl:stylesheet>
-''')
+"""
+        )
 
         tree.getroot().append(style.getroot())
 
         style_root = tree.getroot().getprevious().parseXSL().getroot()
-        self.assertEqual("{http://www.w3.org/1999/XSL/Transform}stylesheet",
-                          style_root.tag)
+        self.assertEqual(
+            "{http://www.w3.org/1999/XSL/Transform}stylesheet", style_root.tag
+        )
 
         st = etree.XSLT(style_root)
         res = st(tree)
-        self.assertEqual('''\
+        self.assertEqual(
+            """\
 <?xml version="1.0"?>
 <foo>B</foo>
-''',
-                          str(res))
+""",
+            str(res),
+        )
 
     def test_xslt_pi_get(self):
-        tree = self.parse('''\
+        tree = self.parse(
+            """\
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="TEST"?>
 <a>
   <b>B</b>
   <c>C</c>
-</a>''')
+</a>"""
+        )
 
         pi = tree.getroot().getprevious()
         self.assertEqual("TEST", pi.get("href"))
 
     def test_xslt_pi_get_all(self):
-        tree = self.parse('''\
+        tree = self.parse(
+            """\
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="TEST"?>
 <a>
   <b>B</b>
   <c>C</c>
-</a>''')
+</a>"""
+        )
 
         pi = tree.getroot().getprevious()
         self.assertEqual("TEST", pi.get("href"))
@@ -1040,13 +1194,15 @@ class ETreeXSLTTestCase(HelperTestCase):
         self.assertEqual(None, pi.get("motz"))
 
     def test_xslt_pi_get_all_reversed(self):
-        tree = self.parse('''\
+        tree = self.parse(
+            """\
 <?xml version="1.0"?>
 <?xml-stylesheet href="TEST" type="text/xsl"?>
 <a>
   <b>B</b>
   <c>C</c>
-</a>''')
+</a>"""
+        )
 
         pi = tree.getroot().getprevious()
         self.assertEqual("TEST", pi.get("href"))
@@ -1054,25 +1210,29 @@ class ETreeXSLTTestCase(HelperTestCase):
         self.assertEqual(None, pi.get("motz"))
 
     def test_xslt_pi_get_unknown(self):
-        tree = self.parse('''\
+        tree = self.parse(
+            """\
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="TEST"?>
 <a>
   <b>B</b>
   <c>C</c>
-</a>''')
+</a>"""
+        )
 
         pi = tree.getroot().getprevious()
         self.assertEqual(None, pi.get("unknownattribute"))
 
     def test_xslt_pi_set_replace(self):
-        tree = self.parse('''\
+        tree = self.parse(
+            """\
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="TEST"?>
 <a>
   <b>B</b>
   <c>C</c>
-</a>''')
+</a>"""
+        )
 
         pi = tree.getroot().getprevious()
         self.assertEqual("TEST", pi.get("href"))
@@ -1081,13 +1241,15 @@ class ETreeXSLTTestCase(HelperTestCase):
         self.assertEqual("TEST123", pi.get("href"))
 
     def test_xslt_pi_set_new(self):
-        tree = self.parse('''\
+        tree = self.parse(
+            """\
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl"?>
 <a>
   <b>B</b>
   <c>C</c>
-</a>''')
+</a>"""
+        )
 
         pi = tree.getroot().getprevious()
         self.assertEqual(None, pi.get("href"))
@@ -1095,12 +1257,14 @@ class ETreeXSLTTestCase(HelperTestCase):
         pi.set("href", "TEST")
         self.assertEqual("TEST", pi.get("href"))
 
+
 class ETreeEXSLTTestCase(HelperTestCase):
     """EXSLT tests"""
 
     def test_exslt_str(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:str="http://exslt.org/strings"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
@@ -1113,19 +1277,23 @@ class ETreeEXSLTTestCase(HelperTestCase):
       <xsl:apply-templates/>
     </xsl:copy>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
         res = st(tree)
-        self.assertEqual('''\
+        self.assertEqual(
+            """\
 <?xml version="1.0"?>
 <a><b>*B*</b><c>*C*</c></a>
-''',
-                          str(res))
+""",
+            str(res),
+        )
 
     def test_exslt_str_attribute_replace(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
           <xsl:stylesheet version = "1.0"
               xmlns:xsl='http://www.w3.org/1999/XSL/Transform'
               xmlns:str="http://exslt.org/strings"
@@ -1135,18 +1303,23 @@ class ETreeEXSLTTestCase(HelperTestCase):
                 <h1 class="{str:replace('abc', 'b', 'x')}">test</h1>
               </xsl:template>
 
-          </xsl:stylesheet>''')
+          </xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
         res = st(tree)
-        self.assertEqual(str(res), '''\
+        self.assertEqual(
+            str(res),
+            """\
 <?xml version="1.0"?>
 <h1 class="axc">test</h1>
-''')
+""",
+        )
 
     def test_exslt_math(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:math="http://exslt.org/math"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
@@ -1159,18 +1332,24 @@ class ETreeEXSLTTestCase(HelperTestCase):
       <xsl:apply-templates/>
     </xsl:copy>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
         res = st(tree)
-        self.assertEqual('''\
+        self.assertEqual(
+            """\
 <?xml version="1.0"?>
 <a pi="3.14"><b pi="3">B</b><c pi="3">C</c></a>
-''',
-                          str(res))
+""",
+            str(res),
+        )
 
     def test_exslt_regexp_test(self):
-        xslt = etree.XSLT(etree.XML(_bytes("""\
+        xslt = etree.XSLT(
+            etree.XML(
+                _bytes(
+                    """\
 <xsl:stylesheet version="1.0"
    xmlns:regexp="http://exslt.org/regular-expressions"
    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -1178,19 +1357,23 @@ class ETreeEXSLTTestCase(HelperTestCase):
     <test><xsl:copy-of select="*[regexp:test(string(.), '8.')]"/></test>
   </xsl:template>
 </xsl:stylesheet>
-""")))
-        result = xslt(etree.XML(_bytes('<a><b>123</b><b>098</b><b>987</b></a>')))
+"""
+                )
+            )
+        )
+        result = xslt(
+            etree.XML(_bytes("<a><b>123</b><b>098</b><b>987</b></a>"))
+        )
         root = result.getroot()
-        self.assertEqual(root.tag,
-                          'test')
+        self.assertEqual(root.tag, "test")
         self.assertEqual(len(root), 1)
-        self.assertEqual(root[0].tag,
-                          'b')
-        self.assertEqual(root[0].text,
-                          '987')
+        self.assertEqual(root[0].tag, "b")
+        self.assertEqual(root[0].text, "987")
 
     def test_exslt_regexp_replace(self):
-        xslt = etree.XSLT(etree.XML("""\
+        xslt = etree.XSLT(
+            etree.XML(
+                """\
 <xsl:stylesheet version="1.0"
    xmlns:regexp="http://exslt.org/regular-expressions"
    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -1202,16 +1385,19 @@ class ETreeEXSLTTestCase(HelperTestCase):
     </test>
   </xsl:template>
 </xsl:stylesheet>
-"""))
-        result = xslt(etree.XML(_bytes('<a>abdCdEeDed</a>')))
+"""
+            )
+        )
+        result = xslt(etree.XML(_bytes("<a>abdCdEeDed</a>")))
         root = result.getroot()
-        self.assertEqual(root.tag,
-                          'test')
+        self.assertEqual(root.tag, "test")
         self.assertEqual(len(root), 0)
-        self.assertEqual(root.text, 'abXXdEeDed-abXXXXeXXd')
+        self.assertEqual(root.text, "abXXdEeDed-abXXXXeXXd")
 
     def test_exslt_regexp_match(self):
-        xslt = etree.XSLT(etree.XML("""\
+        xslt = etree.XSLT(
+            etree.XML(
+                """\
 <xsl:stylesheet version="1.0"
    xmlns:regexp="http://exslt.org/regular-expressions"
    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -1223,32 +1409,37 @@ class ETreeEXSLTTestCase(HelperTestCase):
     </test>
   </xsl:template>
 </xsl:stylesheet>
-"""))
-        result = xslt(etree.XML(_bytes('<a>abdCdEeDed</a>')))
+"""
+            )
+        )
+        result = xslt(etree.XML(_bytes("<a>abdCdEeDed</a>")))
         root = result.getroot()
-        self.assertEqual(root.tag,  'test')
+        self.assertEqual(root.tag, "test")
         self.assertEqual(len(root), 3)
 
         self.assertEqual(len(root[0]), 1)
-        self.assertEqual(root[0][0].tag, 'match')
-        self.assertEqual(root[0][0].text, 'dC')
+        self.assertEqual(root[0][0].tag, "match")
+        self.assertEqual(root[0][0].text, "dC")
 
         self.assertEqual(len(root[1]), 2)
-        self.assertEqual(root[1][0].tag, 'match')
-        self.assertEqual(root[1][0].text, 'dC')
-        self.assertEqual(root[1][1].tag, 'match')
-        self.assertEqual(root[1][1].text, 'dE')
+        self.assertEqual(root[1][0].tag, "match")
+        self.assertEqual(root[1][0].text, "dC")
+        self.assertEqual(root[1][1].tag, "match")
+        self.assertEqual(root[1][1].text, "dE")
 
         self.assertEqual(len(root[2]), 3)
-        self.assertEqual(root[2][0].tag, 'match')
-        self.assertEqual(root[2][0].text, 'dC')
-        self.assertEqual(root[2][1].tag, 'match')
-        self.assertEqual(root[2][1].text, 'dE')
-        self.assertEqual(root[2][2].tag, 'match')
-        self.assertEqual(root[2][2].text, 'De')
+        self.assertEqual(root[2][0].tag, "match")
+        self.assertEqual(root[2][0].text, "dC")
+        self.assertEqual(root[2][1].tag, "match")
+        self.assertEqual(root[2][1].text, "dE")
+        self.assertEqual(root[2][2].tag, "match")
+        self.assertEqual(root[2][2].text, "De")
 
     def test_exslt_regexp_match_groups(self):
-        xslt = etree.XSLT(etree.XML(_bytes("""\
+        xslt = etree.XSLT(
+            etree.XML(
+                _bytes(
+                    """\
 <xsl:stylesheet version="1.0"
    xmlns:regexp="http://exslt.org/regular-expressions"
    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -1261,10 +1452,13 @@ class ETreeEXSLTTestCase(HelperTestCase):
     </test>
   </xsl:template>
 </xsl:stylesheet>
-""")))
-        result = xslt(etree.XML(_bytes('<a/>')))
+"""
+                )
+            )
+        )
+        result = xslt(etree.XML(_bytes("<a/>")))
         root = result.getroot()
-        self.assertEqual(root.tag,  'test')
+        self.assertEqual(root.tag, "test")
         self.assertEqual(len(root), 4)
 
         self.assertEqual(root[0].text, "123abc567")
@@ -1274,7 +1468,10 @@ class ETreeEXSLTTestCase(HelperTestCase):
 
     def test_exslt_regexp_match1(self):
         # taken from http://www.exslt.org/regexp/functions/match/index.html
-        xslt = etree.XSLT(etree.XML(_bytes("""\
+        xslt = etree.XSLT(
+            etree.XML(
+                _bytes(
+                    """\
 <xsl:stylesheet version="1.0"
    xmlns:regexp="http://exslt.org/regular-expressions"
    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -1288,29 +1485,31 @@ class ETreeEXSLTTestCase(HelperTestCase):
     </test>
   </xsl:template>
 </xsl:stylesheet>
-""")))
-        result = xslt(etree.XML(_bytes('<a/>')))
+"""
+                )
+            )
+        )
+        result = xslt(etree.XML(_bytes("<a/>")))
         root = result.getroot()
-        self.assertEqual(root.tag,  'test')
+        self.assertEqual(root.tag, "test")
         self.assertEqual(len(root), 5)
 
         self.assertEqual(
             root[0].text,
-            "http://www.bayes.co.uk/xml/index.xml?/xml/utils/rechecker.xml")
-        self.assertEqual(
-            root[1].text,
-            "http")
-        self.assertEqual(
-            root[2].text,
-            "www.bayes.co.uk")
+            "http://www.bayes.co.uk/xml/index.xml?/xml/utils/rechecker.xml",
+        )
+        self.assertEqual(root[1].text, "http")
+        self.assertEqual(root[2].text, "www.bayes.co.uk")
         self.assertFalse(root[3].text)
         self.assertEqual(
-            root[4].text,
-            "/xml/index.xml?/xml/utils/rechecker.xml")
+            root[4].text, "/xml/index.xml?/xml/utils/rechecker.xml"
+        )
 
     def test_exslt_regexp_match2(self):
         # taken from http://www.exslt.org/regexp/functions/match/index.html
-        xslt = etree.XSLT(self.parse("""\
+        xslt = etree.XSLT(
+            self.parse(
+                """\
 <xsl:stylesheet version="1.0"
    xmlns:regexp="http://exslt.org/regular-expressions"
    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -1323,10 +1522,12 @@ class ETreeEXSLTTestCase(HelperTestCase):
     </test>
   </xsl:template>
 </xsl:stylesheet>
-"""))
-        result = xslt(etree.XML(_bytes('<a/>')))
+"""
+            )
+        )
+        result = xslt(etree.XML(_bytes("<a/>")))
         root = result.getroot()
-        self.assertEqual(root.tag,  'test')
+        self.assertEqual(root.tag, "test")
         self.assertEqual(len(root), 5)
 
         self.assertEqual(root[0].text, "This")
@@ -1338,7 +1539,10 @@ class ETreeEXSLTTestCase(HelperTestCase):
     def _test_exslt_regexp_match3(self):
         # taken from http://www.exslt.org/regexp/functions/match/index.html
         # THIS IS NOT SUPPORTED!
-        xslt = etree.XSLT(etree.XML(_bytes("""\
+        xslt = etree.XSLT(
+            etree.XML(
+                _bytes(
+                    """\
 <xsl:stylesheet version="1.0"
    xmlns:regexp="http://exslt.org/regular-expressions"
    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -1351,10 +1555,13 @@ class ETreeEXSLTTestCase(HelperTestCase):
     </test>
   </xsl:template>
 </xsl:stylesheet>
-""")))
-        result = xslt(etree.XML(_bytes('<a/>')))
+"""
+                )
+            )
+        )
+        result = xslt(etree.XML(_bytes("<a/>")))
         root = result.getroot()
-        self.assertEqual(root.tag,  'test')
+        self.assertEqual(root.tag, "test")
         self.assertEqual(len(root), 4)
 
         self.assertEqual(root[0].text, "his")
@@ -1365,7 +1572,10 @@ class ETreeEXSLTTestCase(HelperTestCase):
     def _test_exslt_regexp_match4(self):
         # taken from http://www.exslt.org/regexp/functions/match/index.html
         # THIS IS NOT SUPPORTED!
-        xslt = etree.XSLT(etree.XML(_bytes("""\
+        xslt = etree.XSLT(
+            etree.XML(
+                _bytes(
+                    """\
 <xsl:stylesheet version="1.0"
    xmlns:regexp="http://exslt.org/regular-expressions"
    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -1378,10 +1588,13 @@ class ETreeEXSLTTestCase(HelperTestCase):
     </test>
   </xsl:template>
 </xsl:stylesheet>
-""")))
-        result = xslt(etree.XML(_bytes('<a/>')))
+"""
+                )
+            )
+        )
+        result = xslt(etree.XML(_bytes("<a/>")))
         root = result.getroot()
-        self.assertEqual(root.tag,  'test')
+        self.assertEqual(root.tag, "test")
         self.assertEqual(len(root), 4)
 
         self.assertEqual(root[0].text, "This")
@@ -1394,45 +1607,48 @@ class ETreeXSLTExtFuncTestCase(HelperTestCase):
     """Tests for XPath extension functions in XSLT."""
 
     def test_extensions1(self):
-        tree = self.parse('<a><b>B</b></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
     exclude-result-prefixes="myns">
   <xsl:template match="a"><A><xsl:value-of select="myns:mytext(b)"/></A></xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         def mytext(ctxt, values):
-            return 'X' * len(values)
+            return "X" * len(values)
 
-        result = tree.xslt(style, {('testns', 'mytext') : mytext})
-        self.assertEqual(self._rootstring(result),
-                          _bytes('<A>X</A>'))
+        result = tree.xslt(style, {("testns", "mytext"): mytext})
+        self.assertEqual(self._rootstring(result), _bytes("<A>X</A>"))
 
     def test_extensions2(self):
-        tree = self.parse('<a><b>B</b></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
     exclude-result-prefixes="myns">
   <xsl:template match="a"><A><xsl:value-of select="myns:mytext(b)"/></A></xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         def mytext(ctxt, values):
-            return 'X' * len(values)
+            return "X" * len(values)
 
-        namespace = etree.FunctionNamespace('testns')
-        namespace['mytext'] = mytext
+        namespace = etree.FunctionNamespace("testns")
+        namespace["mytext"] = mytext
 
         result = tree.xslt(style)
-        self.assertEqual(self._rootstring(result),
-                          _bytes('<A>X</A>'))
+        self.assertEqual(self._rootstring(result), _bytes("<A>X</A>"))
 
     def test_variable_result_tree_fragment(self):
-        tree = self.parse('<a><b>B</b><b/></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><b/></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
@@ -1444,26 +1660,28 @@ class ETreeXSLTExtFuncTestCase(HelperTestCase):
     <A><xsl:value-of select="myns:mytext($content)"/></A>
   </xsl:template>
   <xsl:template match="b"><xsl:copy>BBB</xsl:copy></xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         def mytext(ctxt, values):
             for value in values:
-                self.assertTrue(hasattr(value, 'tag'),
-                             "%s is not an Element" % type(value))
-                self.assertEqual(value.tag, 'b')
-                self.assertEqual(value.text, 'BBB')
-            return 'X'.join([el.tag for el in values])
+                self.assertTrue(
+                    hasattr(value, "tag"), "%s is not an Element" % type(value)
+                )
+                self.assertEqual(value.tag, "b")
+                self.assertEqual(value.text, "BBB")
+            return "X".join([el.tag for el in values])
 
-        namespace = etree.FunctionNamespace('testns')
-        namespace['mytext'] = mytext
+        namespace = etree.FunctionNamespace("testns")
+        namespace["mytext"] = mytext
 
         result = tree.xslt(style)
-        self.assertEqual(self._rootstring(result),
-                         _bytes('<A>bXb</A>'))
+        self.assertEqual(self._rootstring(result), _bytes("<A>bXb</A>"))
 
     def test_xpath_on_context_node(self):
-        tree = self.parse('<a><b>B<c/>C</b><b/></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B<c/>C</b><b/></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
@@ -1471,31 +1689,35 @@ class ETreeXSLTExtFuncTestCase(HelperTestCase):
   <xsl:template match="b">
     <A><xsl:value-of select="myns:myext()"/></A>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         def extfunc(ctxt):
-            text_content = ctxt.context_node.xpath('text()')
-            return 'x'.join(text_content)
+            text_content = ctxt.context_node.xpath("text()")
+            return "x".join(text_content)
 
-        namespace = etree.FunctionNamespace('testns')
-        namespace['myext'] = extfunc
+        namespace = etree.FunctionNamespace("testns")
+        namespace["myext"] = extfunc
 
         result = tree.xslt(style)
-        self.assertEqual(self._rootstring(result),
-                         _bytes('<A>BxC</A>'))
+        self.assertEqual(self._rootstring(result), _bytes("<A>BxC</A>"))
 
     def test_xpath_on_foreign_context_node(self):
         # LP ticket 1354652
         class Resolver(etree.Resolver):
             def resolve(self, system_url, public_id, context):
-                assert system_url == 'extdoc.xml'
-                return self.resolve_string(b'<a><b>B<c/>C</b><b/></a>', context)
+                assert system_url == "extdoc.xml"
+                return self.resolve_string(
+                    b"<a><b>B<c/>C</b><b/></a>", context
+                )
 
         parser = etree.XMLParser()
         parser.resolvers.add(Resolver())
 
-        tree = self.parse(b'<a><b/><b/></a>')
-        transform = etree.XSLT(self.parse(b'''\
+        tree = self.parse(b"<a><b/><b/></a>")
+        transform = etree.XSLT(
+            self.parse(
+                b"""\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:mypre="testns"
@@ -1506,26 +1728,31 @@ class ETreeXSLTExtFuncTestCase(HelperTestCase):
   <xsl:template match="a">
     <A><xsl:apply-templates select="document('extdoc.xml')//b" /></A>
   </xsl:template>
-</xsl:stylesheet>''', parser=parser))
+</xsl:stylesheet>""",
+                parser=parser,
+            )
+        )
 
         def extfunc(ctxt):
-            text_content = ctxt.context_node.xpath('text()')
-            return 'x'.join(text_content)
+            text_content = ctxt.context_node.xpath("text()")
+            return "x".join(text_content)
 
-        namespace = etree.FunctionNamespace('testns')
-        namespace['myext'] = extfunc
+        namespace = etree.FunctionNamespace("testns")
+        namespace["myext"] = extfunc
 
         result = transform(tree)
-        self.assertEqual(self._rootstring(result),
-                         _bytes('<A><B>BxC</B><B/></A>'))
+        self.assertEqual(
+            self._rootstring(result), _bytes("<A><B>BxC</B><B/></A>")
+        )
 
 
 class ETreeXSLTExtElementTestCase(HelperTestCase):
     """Tests for extension elements in XSLT."""
 
     def test_extension_element(self):
-        tree = self.parse('<a><b>B</b></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
@@ -1534,23 +1761,24 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
   <xsl:template match="a">
     <A><myns:myext>b</myns:myext></A>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         class MyExt(etree.XSLTExtension):
             def execute(self, context, self_node, input_node, output_parent):
                 child = etree.Element(self_node.text)
-                child.text = 'X'
+                child.text = "X"
                 output_parent.append(child)
 
-        extensions = { ('testns', 'myext') : MyExt() }
+        extensions = {("testns", "myext"): MyExt()}
 
         result = tree.xslt(style, extensions=extensions)
-        self.assertEqual(self._rootstring(result),
-                          _bytes('<A><b>X</b></A>'))
+        self.assertEqual(self._rootstring(result), _bytes("<A><b>X</b></A>"))
 
     def test_extension_element_doc_context(self):
-        tree = self.parse('<a><b>B</b></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
@@ -1559,7 +1787,8 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
   <xsl:template match="/">
     <A><myns:myext>b</myns:myext></A>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         tags = []
 
@@ -1567,14 +1796,17 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
             def execute(self, context, self_node, input_node, output_parent):
                 tags.append(input_node.tag)
 
-        extensions = { ('testns', 'myext') : MyExt() }
+        extensions = {("testns", "myext"): MyExt()}
 
         result = tree.xslt(style, extensions=extensions)
-        self.assertEqual(tags, ['a'])
+        self.assertEqual(tags, ["a"])
 
     def test_extension_element_comment_pi_context(self):
-        tree = self.parse('<?test toast?><a><!--a comment--><?another pi?></a>')
-        style = self.parse('''\
+        tree = self.parse(
+            "<?test toast?><a><!--a comment--><?another pi?></a>"
+        )
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
@@ -1589,7 +1821,8 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
   <xsl:template match="processing-instruction()">
     <A><myns:myext>b</myns:myext></A>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         text = []
 
@@ -1597,15 +1830,16 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
             def execute(self, context, self_node, input_node, output_parent):
                 text.append(input_node.text)
 
-        extensions = { ('testns', 'myext') : MyExt() }
+        extensions = {("testns", "myext"): MyExt()}
 
         result = tree.xslt(style, extensions=extensions)
-        self.assertEqual(text, ['toast', 'a comment', 'pi'])
+        self.assertEqual(text, ["toast", "a comment", "pi"])
 
     def _test_extension_element_attribute_context(self):
         # currently not supported
         tree = self.parse('<a test="A"><b attr="B"/></a>')
-        style = self.parse('''\
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
@@ -1617,7 +1851,8 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
   <xsl:template match="@attr">
     <A><myns:myext>b</myns:myext></A>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         text = []
 
@@ -1625,14 +1860,15 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
             def execute(self, context, self_node, attr_value, output_parent):
                 text.append(attr_value)
 
-        extensions = { ('testns', 'myext') : MyExt() }
+        extensions = {("testns", "myext"): MyExt()}
 
         result = tree.xslt(style, extensions=extensions)
-        self.assertEqual(text, ['A', 'B'])
+        self.assertEqual(text, ["A", "B"])
 
     def test_extension_element_content(self):
-        tree = self.parse('<a><b>B</b></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
@@ -1640,21 +1876,24 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
   <xsl:template match="a">
     <A><myns:myext><x>X</x><y>Y</y><z/></myns:myext></A>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         class MyExt(etree.XSLTExtension):
             def execute(self, context, self_node, input_node, output_parent):
                 output_parent.extend(list(self_node)[1:])
 
-        extensions = { ('testns', 'myext') : MyExt() }
+        extensions = {("testns", "myext"): MyExt()}
 
         result = tree.xslt(style, extensions=extensions)
-        self.assertEqual(self._rootstring(result),
-                          _bytes('<A><y>Y</y><z/></A>'))
+        self.assertEqual(
+            self._rootstring(result), _bytes("<A><y>Y</y><z/></A>")
+        )
 
     def test_extension_element_apply_templates(self):
-        tree = self.parse('<a><b>B</b></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
@@ -1664,7 +1903,8 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
   </xsl:template>
   <xsl:template match="x" />
   <xsl:template match="z">XYZ</xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         class MyExt(etree.XSLTExtension):
             def execute(self, context, self_node, input_node, output_parent):
@@ -1677,15 +1917,17 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
                             el = result
                         output_parent.append(el)
 
-        extensions = { ('testns', 'myext') : MyExt() }
+        extensions = {("testns", "myext"): MyExt()}
 
         result = tree.xslt(style, extensions=extensions)
-        self.assertEqual(self._rootstring(result),
-                          _bytes('<A><T>Y</T><T>XYZ</T></A>'))
+        self.assertEqual(
+            self._rootstring(result), _bytes("<A><T>Y</T><T>XYZ</T></A>")
+        )
 
     def test_extension_element_apply_templates_elements_only(self):
-        tree = self.parse('<a><b>B</b></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
@@ -1695,25 +1937,27 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
   </xsl:template>
   <xsl:template match="x"><X/></xsl:template>
   <xsl:template match="z">XYZ</xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         class MyExt(etree.XSLTExtension):
             def execute(self, context, self_node, input_node, output_parent):
                 for child in self_node:
-                    for result in self.apply_templates(context, child,
-                                                       elements_only=True):
+                    for result in self.apply_templates(
+                        context, child, elements_only=True
+                    ):
                         assert not isinstance(result, basestring)
                         output_parent.append(result)
 
-        extensions = { ('testns', 'myext') : MyExt() }
+        extensions = {("testns", "myext"): MyExt()}
 
         result = tree.xslt(style, extensions=extensions)
-        self.assertEqual(self._rootstring(result),
-                          _bytes('<A><X/></A>'))
+        self.assertEqual(self._rootstring(result), _bytes("<A><X/></A>"))
 
     def test_extension_element_apply_templates_remove_blank_text(self):
-        tree = self.parse('<a><b>B</b></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
@@ -1724,13 +1968,15 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
   <xsl:template match="x"><X/></xsl:template>
   <xsl:template match="y"><xsl:text>   </xsl:text></xsl:template>
   <xsl:template match="z">XYZ</xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         class MyExt(etree.XSLTExtension):
             def execute(self, context, self_node, input_node, output_parent):
                 for child in self_node:
-                    for result in self.apply_templates(context, child,
-                                                       remove_blank_text=True):
+                    for result in self.apply_templates(
+                        context, child, remove_blank_text=True
+                    ):
                         if isinstance(result, basestring):
                             assert result.strip()
                             el = etree.Element("T")
@@ -1739,15 +1985,17 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
                             el = result
                         output_parent.append(el)
 
-        extensions = { ('testns', 'myext') : MyExt() }
+        extensions = {("testns", "myext"): MyExt()}
 
         result = tree.xslt(style, extensions=extensions)
-        self.assertEqual(self._rootstring(result),
-                          _bytes('<A><X/><T>XYZ</T></A>'))
+        self.assertEqual(
+            self._rootstring(result), _bytes("<A><X/><T>XYZ</T></A>")
+        )
 
     def test_extension_element_apply_templates_target_node(self):
-        tree = self.parse('<a><b>B</b></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
@@ -1757,22 +2005,23 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
   </xsl:template>
   <xsl:template match="x" />
   <xsl:template match="z">XYZ</xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         class MyExt(etree.XSLTExtension):
             def execute(self, context, self_node, input_node, output_parent):
                 for child in self_node:
                     self.apply_templates(context, child, output_parent)
 
-        extensions = { ('testns', 'myext') : MyExt() }
+        extensions = {("testns", "myext"): MyExt()}
 
         result = tree.xslt(style, extensions=extensions)
-        self.assertEqual(self._rootstring(result),
-                          _bytes('<A>YXYZ</A>'))
+        self.assertEqual(self._rootstring(result), _bytes("<A>YXYZ</A>"))
 
     def test_extension_element_apply_templates_target_node_doc(self):
-        tree = self.parse('<a><b>B</b></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
@@ -1783,22 +2032,26 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
   <xsl:template match="x"><xsl:processing-instruction name="test">TEST</xsl:processing-instruction></xsl:template>
   <xsl:template match="y"><Y>XYZ</Y></xsl:template>
   <xsl:template match="z"><xsl:comment>TEST</xsl:comment></xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         class MyExt(etree.XSLTExtension):
             def execute(self, context, self_node, input_node, output_parent):
                 for child in self_node:
                     self.apply_templates(context, child, output_parent)
 
-        extensions = { ('testns', 'myext') : MyExt() }
+        extensions = {("testns", "myext"): MyExt()}
 
         result = tree.xslt(style, extensions=extensions)
-        self.assertEqual(etree.tostring(result),
-                          _bytes('<?test TEST?><Y>XYZ</Y><!--TEST-->'))
+        self.assertEqual(
+            etree.tostring(result),
+            _bytes("<?test TEST?><Y>XYZ</Y><!--TEST-->"),
+        )
 
     def test_extension_element_process_children(self):
-        tree = self.parse('<a><b>E</b></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>E</b></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
@@ -1819,23 +2072,27 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
       </myns:myext>
     </A>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         class MyExt(etree.XSLTExtension):
             def execute(self, context, self_node, input_node, output_parent):
-                el = etree.Element('MY')
+                el = etree.Element("MY")
                 self.process_children(context, el)
                 output_parent.append(el)
 
-        extensions = { ('testns', 'myext') : MyExt() }
+        extensions = {("testns", "myext"): MyExt()}
 
         result = tree.xslt(style, extensions=extensions)
-        self.assertEqual(self._rootstring(result),
-                          _bytes('<A><MYattr="yo"><B><D>E</D></B></MY></A>'))
+        self.assertEqual(
+            self._rootstring(result),
+            _bytes('<A><MYattr="yo"><B><D>E</D></B></MY></A>'),
+        )
 
     def test_extension_element_process_children_to_append_only(self):
-        tree = self.parse('<a/>')
-        style = self.parse('''\
+        tree = self.parse("<a/>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
@@ -1845,21 +2102,22 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
       <A/>
     </myns:myext>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         class MyExt(etree.XSLTExtension):
             def execute(self, context, self_node, input_node, output_parent):
                 self.process_children(context, output_parent)
 
-        extensions = { ('testns', 'myext') : MyExt() }
+        extensions = {("testns", "myext"): MyExt()}
 
         result = tree.xslt(style, extensions=extensions)
-        self.assertEqual(self._rootstring(result),
-                          _bytes('<A/>'))
+        self.assertEqual(self._rootstring(result), _bytes("<A/>"))
 
     def test_extension_element_process_children_to_read_only_raise(self):
-        tree = self.parse('<a/>')
-        style = self.parse('''\
+        tree = self.parse("<a/>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
@@ -1869,19 +2127,23 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
       <A/>
     </myns:myext>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         class MyExt(etree.XSLTExtension):
             def execute(self, context, self_node, input_node, output_parent):
                 self.process_children(context, self_node)
 
-        extensions = { ('testns', 'myext') : MyExt() }
+        extensions = {("testns", "myext"): MyExt()}
 
         self.assertRaises(TypeError, tree.xslt, style, extensions=extensions)
 
-    def test_extension_element_process_children_with_subextension_element(self):
-        tree = self.parse('<a/>')
-        style = self.parse('''\
+    def test_extension_element_process_children_with_subextension_element(
+        self,
+    ):
+        tree = self.parse("<a/>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
@@ -1891,25 +2153,30 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
       <A><myns:myext><B/></myns:myext></A>
     </myns:myext>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         class MyExt(etree.XSLTExtension):
             callback_call_counter = 0
+
             def execute(self, context, self_node, input_node, output_parent):
                 self.callback_call_counter += 1
-                el = etree.Element('MY', n=str(self.callback_call_counter))
+                el = etree.Element("MY", n=str(self.callback_call_counter))
                 self.process_children(context, el)
                 output_parent.append(el)
 
-        extensions = { ('testns', 'myext') : MyExt() }
+        extensions = {("testns", "myext"): MyExt()}
 
         result = tree.xslt(style, extensions=extensions)
-        self.assertEqual(self._rootstring(result),
-                          _bytes('<MYn="1"><A><MYn="2"><B/></MY></A></MY>'))
+        self.assertEqual(
+            self._rootstring(result),
+            _bytes('<MYn="1"><A><MYn="2"><B/></MY></A></MY>'),
+        )
 
     def test_extension_element_raise(self):
-        tree = self.parse('<a><b>B</b></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:myns="testns"
@@ -1918,7 +2185,8 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
   <xsl:template match="a">
     <A><myns:myext>b</myns:myext></A>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         class MyError(Exception):
             pass
@@ -1927,17 +2195,20 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
             def execute(self, context, self_node, input_node, output_parent):
                 raise MyError("expected!")
 
-        extensions = { ('testns', 'myext') : MyExt() }
+        extensions = {("testns", "myext"): MyExt()}
         self.assertRaises(MyError, tree.xslt, style, extensions=extensions)
 
     # FIXME: DISABLED - implementation seems to be broken
     # if someone cares enough about this feature, I take pull requests that fix it.
     def _test_multiple_extension_elements_with_output_parent(self):
-        tree = self.parse("""\
+        tree = self.parse(
+            """\
 <text>
   <par>This is <format>arbitrary</format> text in a paragraph</par>
-</text>""")
-        style = self.parse("""\
+</text>"""
+        )
+        style = self.parse(
+            """\
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:my="my" extension-element-prefixes="my" version="1.0">
   <xsl:template match="par">
     <my:par><xsl:apply-templates /></my:par>
@@ -1946,13 +2217,14 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
     <my:format><xsl:apply-templates /></my:format>
   </xsl:template>
 </xsl:stylesheet>
-""")
+"""
+        )
         test = self
         calls = []
 
         class ExtMyPar(etree.XSLTExtension):
             def execute(self, context, self_node, input_node, output_parent):
-                calls.append('par')
+                calls.append("par")
                 p = etree.Element("p")
                 p.attrib["style"] = "color:red"
                 self.process_children(context, p)
@@ -1960,30 +2232,37 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
 
         class ExtMyFormat(etree.XSLTExtension):
             def execute(self, context, self_node, input_node, output_parent):
-                calls.append('format')
+                calls.append("format")
                 content = self.process_children(context)
                 test.assertEqual(1, len(content))
-                test.assertEqual('arbitrary', content[0])
-                test.assertEqual('This is ', output_parent.text)
-                output_parent.text += '*-%s-*' % content[0]
+                test.assertEqual("arbitrary", content[0])
+                test.assertEqual("This is ", output_parent.text)
+                output_parent.text += "*-%s-*" % content[0]
 
-        extensions = {("my", "par"): ExtMyPar(), ("my", "format"): ExtMyFormat()}
+        extensions = {
+            ("my", "par"): ExtMyPar(),
+            ("my", "format"): ExtMyFormat(),
+        }
         transform = etree.XSLT(style, extensions=extensions)
         result = transform(tree)
-        self.assertEqual(['par', 'format'], calls)
+        self.assertEqual(["par", "format"], calls)
         self.assertEqual(
             b'<p style="color:red">This is *-arbitrary-* text in a paragraph</p>\n',
-            etree.tostring(result))
+            etree.tostring(result),
+        )
 
     def test_extensions_nsmap(self):
-        tree = self.parse("""\
+        tree = self.parse(
+            """\
 <root>
   <inner xmlns:sha256="http://www.w3.org/2001/04/xmlenc#sha256">
     <data>test</data>
   </inner>
 </root>
-""")
-        style = self.parse("""\
+"""
+        )
+        style = self.parse(
+            """\
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:my="extns" extension-element-prefixes="my" version="1.0">
   <xsl:template match="node()|@*">
     <xsl:copy>
@@ -1995,84 +2274,106 @@ class ETreeXSLTExtElementTestCase(HelperTestCase):
     <my:show-nsmap/>
   </xsl:template>
 </xsl:stylesheet>
-""")
+"""
+        )
+
         class MyExt(etree.XSLTExtension):
             def execute(self, context, self_node, input_node, output_parent):
                 output_parent.text = str(input_node.nsmap)
 
-        extensions = {('extns', 'show-nsmap'): MyExt()}
+        extensions = {("extns", "show-nsmap"): MyExt()}
 
         result = tree.xslt(style, extensions=extensions)
-        self.assertEqual(etree.tostring(result, pretty_print=True), b"""\
+        self.assertEqual(
+            etree.tostring(result, pretty_print=True),
+            b"""\
 <root>
   <inner xmlns:sha256="http://www.w3.org/2001/04/xmlenc#sha256">{'sha256': 'http://www.w3.org/2001/04/xmlenc#sha256'}
   </inner>
 </root>
-""")
-
+""",
+        )
 
 
 class Py3XSLTTestCase(HelperTestCase):
     """XSLT tests for etree under Python 3"""
 
-    pytestmark = skipif('sys.version_info < (3,0)')
+    pytestmark = skipif("sys.version_info < (3,0)")
 
     def test_xslt_result_bytes(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="*" />
   <xsl:template match="/">
     <foo><xsl:value-of select="/a/b/text()" /></foo>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
         res = st(tree)
-        self.assertEqual(_bytes('''\
+        self.assertEqual(
+            _bytes(
+                """\
 <?xml version="1.0"?>
 <foo>B</foo>
-'''),
-                          bytes(res))
+"""
+            ),
+            bytes(res),
+        )
 
     def test_xslt_result_bytearray(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="*" />
   <xsl:template match="/">
     <foo><xsl:value-of select="/a/b/text()" /></foo>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
         res = st(tree)
-        self.assertEqual(_bytes('''\
+        self.assertEqual(
+            _bytes(
+                """\
 <?xml version="1.0"?>
 <foo>B</foo>
-'''),
-                          bytearray(res))
+"""
+            ),
+            bytearray(res),
+        )
 
     def test_xslt_result_memoryview(self):
-        tree = self.parse('<a><b>B</b><c>C</c></a>')
-        style = self.parse('''\
+        tree = self.parse("<a><b>B</b><c>C</c></a>")
+        style = self.parse(
+            """\
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:template match="*" />
   <xsl:template match="/">
     <foo><xsl:value-of select="/a/b/text()" /></foo>
   </xsl:template>
-</xsl:stylesheet>''')
+</xsl:stylesheet>"""
+        )
 
         st = etree.XSLT(style)
         res = st(tree)
-        self.assertEqual(_bytes('''\
+        self.assertEqual(
+            _bytes(
+                """\
 <?xml version="1.0"?>
 <foo>B</foo>
-'''),
-                          bytes(memoryview(res)))
+"""
+            ),
+            bytes(memoryview(res)),
+        )
 
 
 def test_suite():
@@ -2083,11 +2384,10 @@ def test_suite():
     suite.addTests([unittest.makeSuite(ETreeXSLTExtElementTestCase)])
     if is_python3:
         suite.addTests([unittest.makeSuite(Py3XSLTTestCase)])
-    suite.addTests(
-        [make_doctest('../../../doc/extensions.txt')])
-    suite.addTests(
-        [make_doctest('../../../doc/xpathxslt.txt')])
+    suite.addTests([make_doctest("../../../doc/extensions.txt")])
+    suite.addTests([make_doctest("../../../doc/xpathxslt.txt")])
     return suite
 
-if __name__ == '__main__':
-    print('to test use test.py %s' % __file__)
+
+if __name__ == "__main__":
+    print("to test use test.py %s" % __file__)

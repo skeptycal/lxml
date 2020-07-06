@@ -2,15 +2,23 @@ import copy
 from itertools import *
 
 import benchbase
-from benchbase import (with_attributes, with_text, onlylib,
-                       serialized, children, nochange, BytesIO)
+from benchbase import (
+    with_attributes,
+    with_text,
+    onlylib,
+    serialized,
+    children,
+    nochange,
+    BytesIO,
+)
 
-TEXT  = "some ASCII text"
+TEXT = "some ASCII text"
 UTEXT = u"some klingon: \F8D2"
 
 ############################################################
 # Benchmarks
 ############################################################
+
 
 class BenchMark(benchbase.TreeBenchMark):
     @nochange
@@ -49,41 +57,42 @@ class BenchMark(benchbase.TreeBenchMark):
     @with_attributes(False)
     @with_text(text=True, utext=True)
     def bench_tostring_text_unicode(self, root):
-        self.etree.tostring(root, method="text", encoding='unicode')
+        self.etree.tostring(root, method="text", encoding="unicode")
 
     @nochange
     @with_attributes(False)
     @with_text(text=True, utext=True)
     def bench_tostring_text_utf16(self, root):
-        self.etree.tostring(root, method="text", encoding='UTF-16')
+        self.etree.tostring(root, method="text", encoding="UTF-16")
 
     @nochange
     @with_attributes(False)
     @with_text(text=True, utext=True)
-    @onlylib('lxe')
+    @onlylib("lxe")
     @children
     def bench_tostring_text_utf8_with_tail(self, children):
         for child in children:
-            self.etree.tostring(child, method="text",
-                                encoding='UTF-8', with_tail=True)
+            self.etree.tostring(
+                child, method="text", encoding="UTF-8", with_tail=True
+            )
 
     @nochange
     @with_attributes(True, False)
     @with_text(text=True, utext=True)
     def bench_tostring_utf8(self, root):
-        self.etree.tostring(root, encoding='UTF-8')
+        self.etree.tostring(root, encoding="UTF-8")
 
     @nochange
     @with_attributes(True, False)
     @with_text(text=True, utext=True)
     def bench_tostring_utf16(self, root):
-        self.etree.tostring(root, encoding='UTF-16')
+        self.etree.tostring(root, encoding="UTF-16")
 
     @nochange
     @with_attributes(True, False)
     @with_text(text=True, utext=True)
     def bench_tostring_utf8_unicode_XML(self, root):
-        xml = self.etree.tostring(root, encoding='UTF-8').decode('UTF-8')
+        xml = self.etree.tostring(root, encoding="UTF-8").decode("UTF-8")
         self.etree.XML(xml)
 
     @nochange
@@ -91,7 +100,7 @@ class BenchMark(benchbase.TreeBenchMark):
     @with_text(text=True, utext=True)
     def bench_write_utf8_parse_bytesIO(self, root):
         f = BytesIO()
-        self.etree.ElementTree(root).write(f, encoding='UTF-8')
+        self.etree.ElementTree(root).write(f, encoding="UTF-8")
         f.seek(0)
         self.etree.parse(f)
 
@@ -130,7 +139,7 @@ class BenchMark(benchbase.TreeBenchMark):
             root1.append(el)
 
     def bench_insert_from_document(self, root1, root2):
-        pos = len(root1)//2
+        pos = len(root1) // 2
         for el in root2:
             root1.insert(pos, el)
             pos = pos + 1
@@ -143,13 +152,13 @@ class BenchMark(benchbase.TreeBenchMark):
             root.append(el)
 
     def bench_reorder(self, root):
-        for i in range(1,len(root)//2):
+        for i in range(1, len(root) // 2):
             el = root[0]
             del root[0]
-            root[-i:-i] = [ el ]
+            root[-i:-i] = [el]
 
     def bench_reorder_slice(self, root):
-        for i in range(1,len(root)//2):
+        for i in range(1, len(root) // 2):
             els = root[0:1]
             del root[0]
             root[-i:-i] = els
@@ -174,12 +183,12 @@ class BenchMark(benchbase.TreeBenchMark):
     def bench_create_subelements(self, children):
         SubElement = self.etree.SubElement
         for child in children:
-            SubElement(child, '{test}test')
+            SubElement(child, "{test}test")
 
     def bench_append_elements(self, root):
         Element = self.etree.Element
         for child in root:
-            el = Element('{test}test')
+            el = Element("{test}test")
             child.append(el)
 
     @nochange
@@ -187,25 +196,25 @@ class BenchMark(benchbase.TreeBenchMark):
     def bench_makeelement(self, children):
         empty_attrib = {}
         for child in children:
-            child.makeelement('{test}test', empty_attrib)
+            child.makeelement("{test}test", empty_attrib)
 
     @nochange
     @children
     def bench_create_elements(self, children):
         Element = self.etree.Element
         for child in children:
-            Element('{test}test')
+            Element("{test}test")
 
     @children
     def bench_replace_children_element(self, children):
         Element = self.etree.Element
         for child in children:
-            el = Element('{test}test')
+            el = Element("{test}test")
             child[:] = [el]
 
     @children
     def bench_replace_children(self, children):
-        els = [ self.etree.Element("newchild") ]
+        els = [self.etree.Element("newchild")]
         for child in children:
             child[:] = els
 
@@ -220,22 +229,22 @@ class BenchMark(benchbase.TreeBenchMark):
     @children
     def bench_set_attributes(self, children):
         for child in children:
-            child.set('a', 'bla')
+            child.set("a", "bla")
 
     @with_attributes(True)
     @children
     @nochange
     def bench_get_attributes(self, children):
         for child in children:
-            child.get('bla1')
-            child.get('{attr}test1')
+            child.get("bla1")
+            child.get("{attr}test1")
 
     @children
     def bench_setget_attributes(self, children):
         for child in children:
-            child.set('a', 'bla')
+            child.set("a", "bla")
         for child in children:
-            child.get('a')
+            child.get("a")
 
     @nochange
     def bench_root_getchildren(self, root):
@@ -319,19 +328,19 @@ class BenchMark(benchbase.TreeBenchMark):
             child.text = text
 
     @nochange
-    @onlylib('lxe')
+    @onlylib("lxe")
     def bench_index(self, root):
         for child in root:
             root.index(child)
 
     @nochange
-    @onlylib('lxe')
+    @onlylib("lxe")
     def bench_index_slice(self, root):
         for child in root[5:100]:
             root.index(child, 5, 100)
 
     @nochange
-    @onlylib('lxe')
+    @onlylib("lxe")
     def bench_index_slice_neg(self, root):
         for child in root[-100:-5]:
             root.index(child, start=-100, stop=-5)
@@ -342,7 +351,7 @@ class BenchMark(benchbase.TreeBenchMark):
 
     @nochange
     def bench_iter_one_at_a_time(self, root):
-        list(islice(root.iter(), 2**30, None))
+        list(islice(root.iter(), 2 ** 30, None))
 
     @nochange
     def bench_iter_islice(self, root):
@@ -358,7 +367,7 @@ class BenchMark(benchbase.TreeBenchMark):
 
     @nochange
     def bench_iter_tag_one_at_a_time(self, root):
-        list(islice(root.iter(self.SEARCH_TAG), 2**30, None))
+        list(islice(root.iter(self.SEARCH_TAG), 2 ** 30, None))
 
     @nochange
     def bench_iter_tag_none(self, root):
@@ -366,7 +375,7 @@ class BenchMark(benchbase.TreeBenchMark):
 
     @nochange
     def bench_iter_tag_text(self, root):
-        [ e.text for e in root.iter(self.SEARCH_TAG) ]
+        [e.text for e in root.iter(self.SEARCH_TAG)]
 
     @nochange
     def bench_findall(self, root):
@@ -385,11 +394,10 @@ class BenchMark(benchbase.TreeBenchMark):
         root.findall(".//*[%s]/./%s/./*" % (self.SEARCH_TAG, self.SEARCH_TAG))
 
     @nochange
-    @onlylib('lxe')
+    @onlylib("lxe")
     def bench_xpath_path(self, root):
-        ns, tag = self.SEARCH_TAG[1:].split('}')
-        root.xpath(".//*[p:%s]/./p:%s/./*" % (tag,tag),
-                   namespaces = {'p':ns})
+        ns, tag = self.SEARCH_TAG[1:].split("}")
+        root.xpath(".//*[p:%s]/./p:%s/./*" % (tag, tag), namespaces={"p": ns})
 
     @nochange
     def bench_iterfind(self, root):
@@ -406,13 +414,14 @@ class BenchMark(benchbase.TreeBenchMark):
     _bench_xpath_single_xpath = None
 
     @nochange
-    @onlylib('lxe')
+    @onlylib("lxe")
     def bench_xpath_single(self, root):
         xpath = self._bench_xpath_single_xpath
         if xpath is None:
-            ns, tag = self.SEARCH_TAG[1:].split('}')
+            ns, tag = self.SEARCH_TAG[1:].split("}")
             xpath = self._bench_xpath_single_xpath = self.etree.XPath(
-                './/p:%s[1]' % tag, namespaces={'p': ns})
+                ".//p:%s[1]" % tag, namespaces={"p": ns}
+            )
         xpath(root)
 
     @nochange
@@ -426,13 +435,14 @@ class BenchMark(benchbase.TreeBenchMark):
     _bench_xpath_two_xpath = None
 
     @nochange
-    @onlylib('lxe')
+    @onlylib("lxe")
     def bench_xpath_two(self, root):
         xpath = self._bench_xpath_two_xpath
         if xpath is None:
-            ns, tag = self.SEARCH_TAG[1:].split('}')
+            ns, tag = self.SEARCH_TAG[1:].split("}")
             xpath = self._bench_xpath_two_xpath = self.etree.XPath(
-                './/p:%s[position() < 3]' % tag, namespaces={'p': ns})
+                ".//p:%s[position() < 3]" % tag, namespaces={"p": ns}
+            )
         xpath(root)
 
     @nochange
@@ -448,5 +458,5 @@ class BenchMark(benchbase.TreeBenchMark):
         next(it)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     benchbase.main(BenchMark)
